@@ -56,12 +56,12 @@ extern "C"
 #define LIMIT_X_PULLUP_ENABLE
 #define LIMIT_Y_PULLUP_ENABLE
 #define LIMIT_Z_PULLUP_ENABLE
-#define LIMIT_X2_PULLUP_ENABLE
-#define LIMIT_Y2_PULLUP_ENABLE
-#define LIMIT_Z2_PULLUP_ENABLE
-#define LIMIT_A_PULLUP_ENABLE
-#define LIMIT_B_PULLUP_ENABLE
-#define LIMIT_C_PULLUP_ENABLE
+// #define LIMIT_X2_PULLUP_ENABLE
+// #define LIMIT_Y2_PULLUP_ENABLE
+// #define LIMIT_Z2_PULLUP_ENABLE
+// #define LIMIT_A_PULLUP_ENABLE
+// #define LIMIT_B_PULLUP_ENABLE
+// #define LIMIT_C_PULLUP_ENABLE
 
 // Uncomment to enable weak pull up resistor for probe
 // If the pin is not defined in the board this will be ignored
@@ -97,10 +97,10 @@ extern "C"
  */
 // #define DISABLE_X_HOMING
 // #define DISABLE_Y_HOMING
-// #define DISABLE_Z_HOMING
-// #define DISABLE_A_HOMING
-// #define DISABLE_B_HOMING
-// #define DISABLE_C_HOMING
+#define DISABLE_Z_HOMING
+#define DISABLE_A_HOMING
+#define DISABLE_B_HOMING
+#define DISABLE_C_HOMING
 
 /**
  * Uncomment this feature to enable X and Y homing simultaneously
@@ -112,7 +112,7 @@ extern "C"
  * Enable this option if you want the rotation axis to work in relative distance mode only
  * This will mean that no matter if the machine is working in absolute (G90) or relative (G91) coordinates
  * the rotational axis will always calculate the motion in relative distance mode
- * 
+ *
 */
 // #define AXIS_A_FORCE_RELATIVE_MODE
 // #define AXIS_B_FORCE_RELATIVE_MODE
@@ -285,10 +285,10 @@ extern "C"
 // assign the tools from 1 to 16
 #if (TOOL_COUNT >= 1)
 // to allow build on virtual emulator
-#define TOOL1 spindle_pwm
+#define TOOL1 spindle_relay
 #endif
 #if (TOOL_COUNT >= 2)
-#define TOOL2 spindle_pwm
+#define TOOL2 spindle_relay
 #endif
 #if (TOOL_COUNT >= 3)
 #define TOOL3 spindle_pwm

@@ -140,7 +140,7 @@ extern "C"
 #define EXEC_ALARM_NOALARM 0
 // Grbl alarm codes. Valid values (1-255). Zero is reserved for the reset alarm.
 #define EXEC_ALARM_HARD_LIMIT 1 // hard limits hit while in motion other then homing
-#define EXEC_ALARM_SOFT_LIMIT 2 // target is off bounds of the machine kinematics 
+#define EXEC_ALARM_SOFT_LIMIT 2 // target is off bounds of the machine kinematics
 #define EXEC_ALARM_ABORT_CYCLE 3 // an abort command was issued
 #define EXEC_ALARM_PROBE_FAIL_INITIAL 4 // probe was already triggered and was not able to initialize probing
 #define EXEC_ALARM_PROBE_FAIL_CONTACT 5 // probe failed to triggered before reaching the limit target

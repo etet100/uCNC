@@ -67,7 +67,7 @@ extern "C"
 	 * */
 
 #ifndef AXIS_COUNT
-#define AXIS_COUNT 3
+#define AXIS_COUNT 2
 #endif
 
 #ifndef KINEMATIC
@@ -151,6 +151,24 @@ extern "C"
 	 * The tool and tool order are configured in the cnc_hal_config.h
 	 * */
 
+#define DEFAULT_DIR_INV_MASK 2
+#define DEFAULT_LIMIT_INV_MASK 255
+#define DEFAULT_SOFT_LIMITS_ENABLED 1
+#define DEFAULT_HARD_LIMITS_ENABLED 1
+#define DEFAULT_HOMING_ENABLED 1
+#define DEFAULT_HOMING_DIR_INV_MASK 0
+#define DEFAULT_HOMING_FAST 2000
+#define DEFAULT_HOMING_SLOW 1500
+#define DEFAULT_HOMING_OFFSET 4
+//#define DEFAULT_STEP_PER_MM 200
+#define DEFAULT_STEP_PER_MM_PER_AXIS {80, 144}
+//#define DEFAULT_MAX_FEED 6000
+#define DEFAULT_MAX_FEED_PER_AXIS {6000, 6000}
+//#define DEFAULT_ACCEL 1000
+#define DEFAULT_ACCEL_PER_AXIS {1000, 1000}
+//#define DEFAULT_MAX_DIST 1000
+#define DEFAULT_MAX_DIST_PER_AXIS {420, 650}
+
 #ifndef TOOL_COUNT
 #define TOOL_COUNT 1
 #endif
@@ -185,7 +203,7 @@ extern "C"
  * ensure spindle gets up to speed in motions
  * This will be ignored on laser mode
  * */
-#define DELAY_ON_RESUME_SPINDLE 4
+#define DELAY_ON_RESUME_SPINDLE 1
 #define DELAY_ON_SPINDLE_SPEED_CHANGE 1
 // define coolant delay at restart
 #define DELAY_ON_RESUME_COOLANT 1
@@ -336,7 +354,7 @@ extern "C"
 // enables automatic status report sending
 // this value sets the millisecond interval of the reports
 // values bellow 100ms have no effect
-#define STATUS_AUTOMATIC_REPORT_INTERVAL 0
+#define STATUS_AUTOMATIC_REPORT_INTERVAL 100
 
 /**
  *
@@ -498,7 +516,7 @@ extern "C"
  * Uncomment to invert Emergency stop button
  * */
 #ifndef INVERT_EMERGENCY_STOP
-// #define INVERT_EMERGENCY_STOP
+ #define INVERT_EMERGENCY_STOP
 #endif
 
 	/**
@@ -512,7 +530,7 @@ extern "C"
 // #define DISABLE_ALL_LIMITS
 #endif
 #ifndef DISABLE_PROBE
-// #define DISABLE_PROBE
+ #define DISABLE_PROBE
 #endif
 
 	/**
