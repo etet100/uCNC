@@ -11,19 +11,22 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <math.h>
+#include <QString>
 #include <Windows.h>
+#include <QtCore>
+#include <QLocalSocket>
+
 
 class WindowsSerial
 {
     private:
         //Serial comm handler
-        HANDLE hSerial;
+        //HANDLE hSerial;
         //Connection status
         bool connected;
-        //Get various information about the connection
-        COMSTAT status;
         //Keep track of last error
-        DWORD errors;
+        DWORD errors;        
+        QLocalSocket *socket;
 
     public:
         //Initialize Serial communication with the given COM port
@@ -40,8 +43,8 @@ class WindowsSerial
         bool WriteData(const uint8_t *buffer, unsigned int nbChar);
         //Check if we are actually connected
         bool IsConnected();
-
-
+        //
+        void connect(QString serverName);
 };
 
 #endif // SERIALCLASS_H_INCLUDED

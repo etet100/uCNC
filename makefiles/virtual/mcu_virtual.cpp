@@ -35,8 +35,14 @@ extern "C"
 // #include <ws2tcpip.h>
 // #pragma comment(lib, "ws2_32.lib") // Winsock Library
 // #include <windows.h>
+#ifdef __cplusplus
+}
+#endif
 #include "WindowsSerial.h"
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 	/**
 	 *
 	 *
@@ -901,16 +907,25 @@ extern "C"
 		mcu_enable_global_isr();
 	}
 
-	int main(int argc, char **argv)
-	{
-		cnc_init();
-		for (;;)
-		{
-			cnc_run();
-		}
-		return 0;
-	}
-	
+    #include <QtCore>
+
+    Q_DECL_EXPORT
+    void uCNC(QString socketName)
+    {
+        Serial.connect(socketName);
+        cnc_init();
+        for (;;)
+        {
+            cnc_run();
+        }
+    }
+
+    Q_DECL_EXPORT
+    WindowsSerial* getSerial()
+    {
+        return &Serial;
+    }
+
 	uint8_t itp_set_step_mode(uint8_t mode) {return 0;}
 
 	uint32_t mcu_free_micros(void)

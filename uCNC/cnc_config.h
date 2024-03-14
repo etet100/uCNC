@@ -54,7 +54,7 @@ extern "C"
 
 // optional name to override default board name build info (if option enabled)
 #ifndef BOARD_NAME
-// #define BOARD_NAME "My custom board"
+    #define BOARD_NAME "uCNC Simulator"
 #endif
 
 	/**
