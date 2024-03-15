@@ -1,12 +1,13 @@
-TEMPLATE = lib
+#if you want to build exe
 #TEMPLATE = app
 #CONFIG += console
+
+TEMPLATE = lib
 QT += network
 TARGET = uCNC
-DESTDIR = $$PWD/build
-OBJECTS_DIR = $$DESTDIR/obj
 DEFINES += BOARD=BOARD_VIRTUAL
 DEFINES += MCU=MCU_VIRTUAL_WIN
+CONFIG -= debug_and_release
 #DEFINES += WIN_INTERFACE=0
 
 HEADERS += \
@@ -110,6 +111,3 @@ DISTFILES += \
     uCNC/src/hal/tools/tools/README.md \
     uCNC/src/modules/system_menu.md
 
-CONFIG += debug
-QMAKE_CXXFLAGS_DEBUG += -g
-QMAKE_LFLAGS_DEBUG += -g
