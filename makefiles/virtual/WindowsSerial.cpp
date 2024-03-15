@@ -31,7 +31,7 @@ int WindowsSerial::ReadData(char *buffer, unsigned int nbChar)
     //Number of bytes we'll really ask to read
     unsigned int toRead;
 
-    socket->waitForReadyRead(0);
+    // socket->waitForReadyRead(0);
     if (socket->bytesAvailable()) {
         //If there is we check if there is enough data to read the required number
         //of characters, if not we'll read only the available characters to prevent
@@ -49,11 +49,11 @@ int WindowsSerial::ReadData(char *buffer, unsigned int nbChar)
 
 bool WindowsSerial::WriteData(const uint8_t *buffer, unsigned int nbChar)
 {
-    if (socket->bytesToWrite()) {
-        socket->waitForBytesWritten(5);
-    }
+    // if (socket->bytesToWrite()) {
+    //     socket->waitForBytesWritten(5);
+    // }
     socket->write((const char *)buffer, nbChar);
-    socket->flush();
+    // socket->flush();
 
     return true;
 }

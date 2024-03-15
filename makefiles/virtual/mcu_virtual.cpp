@@ -66,6 +66,10 @@ extern "C"
 		return global_isr_enabled;
 	}
 
+    void qt_loop()
+    {
+        QCoreApplication::processEvents();
+    }
 /**
  *
  *
@@ -223,7 +227,7 @@ extern "C"
 					}
 				}
 			}
-			printf("%s", tmp);
+            printf("U2 %s", tmp);
 		}
 	}
 

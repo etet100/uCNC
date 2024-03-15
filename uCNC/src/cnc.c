@@ -138,6 +138,7 @@ void cnc_run(void)
 		do
 		{
 			cnc_parse_cmd();
+            qt_loop();
 		} while (cnc_dotasks());
 
 		cnc_state.loop_state = LOOP_FAULT;
@@ -153,7 +154,8 @@ void cnc_run(void)
 			cnc_state.loop_state = LOOP_REQUIRE_RESET;
 			break;
 		}
-	}
+        qt_loop();
+    }
 
 	do
 	{
@@ -170,7 +172,9 @@ void cnc_run(void)
 		if (cnc_state.alarm == EXEC_ALARM_SOFTRESET)
 		{
 			break;
-		}
+        }
+
+        qt_loop();
 	} while (cnc_state.loop_state == LOOP_REQUIRE_RESET || cnc_get_exec_state(EXEC_KILL));
 }
 
