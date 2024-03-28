@@ -58,6 +58,8 @@ static void cnc_io_dotasks(void);
 static void cnc_reset(void);
 static void cnc_run_startup_blocks(void);
 
+void qt_loop();
+
 #ifdef ENABLE_MAIN_LOOP_MODULES
 // event_cnc_reset_handler
 WEAK_EVENT_HANDLER(cnc_reset)
@@ -138,7 +140,6 @@ void cnc_run(void)
 		do
 		{
 			cnc_parse_cmd();
-            qt_loop();
 		} while (cnc_dotasks());
 
 		cnc_state.loop_state = LOOP_FAULT;
@@ -154,7 +155,6 @@ void cnc_run(void)
 			cnc_state.loop_state = LOOP_REQUIRE_RESET;
 			break;
 		}
-        qt_loop();
     }
 
 	do
@@ -173,8 +173,6 @@ void cnc_run(void)
 		{
 			break;
         }
-
-        qt_loop();
 	} while (cnc_state.loop_state == LOOP_REQUIRE_RESET || cnc_get_exec_state(EXEC_KILL));
 }
 
@@ -236,7 +234,9 @@ uint8_t cnc_parse_cmd(void)
 
 bool cnc_dotasks(void)
 {
-	// run io basic tasks
+    qt_loop();
+
+    // run io basic tasks
 	cnc_io_dotasks();
 
 	cnc_exec_rt_commands(); // executes all pending realtime commands

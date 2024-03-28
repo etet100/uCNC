@@ -227,7 +227,7 @@ extern "C"
 					}
 				}
 			}
-            printf("U2 %s", tmp);
+            //printf("U2 %s", tmp);
 		}
 	}
 
