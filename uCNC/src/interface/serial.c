@@ -250,8 +250,10 @@ uint8_t serial_available(void)
 		while (p != NULL)
 		{
 #ifdef ENABLE_DEBUG_STREAM
-			// skip the debug stream
+#if DEBUG_STREAM != default_stream
+			// skip the debug stream, if it differs from default_stream
 			if (p != DEBUG_STREAM)
+#endif
 			{
 #endif
 				count = (!(p->stream_available)) ? 0 : p->stream_available();
@@ -340,11 +342,14 @@ void serial_putc(char c)
 #ifdef ENABLE_DEBUG_STREAM
 void debug_putc(char c)
 {
-	DEBUG_STREAM->stream_putc(c);
-
-	if (c == '\n')
+	if (DEBUG_STREAM)
 	{
-		DEBUG_STREAM->stream_flush();
+		DEBUG_STREAM->stream_putc(c);
+
+		if (c == '\n')
+		{
+			DEBUG_STREAM->stream_flush();
+		}
 	}
 }
 #endif

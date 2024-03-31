@@ -354,16 +354,16 @@ extern "C"
 			BOOL fConnected = FALSE;
 
 			hPipe = CreateNamedPipe(
-				lpszPipename,				// pipe name
-				PIPE_ACCESS_DUPLEX,			// read/write access
-				PIPE_TYPE_MESSAGE |			// message type pipe
-					PIPE_READMODE_MESSAGE | // message-read mode
-					PIPE_WAIT,				// blocking mode
-				PIPE_UNLIMITED_INSTANCES,	// max. instances
-				sizeof(VIRTUAL_MAP),		// output buffer size
-				sizeof(VIRTUAL_MAP),		// input buffer size
-				0,							// client time-out
-				NULL);						// no template file
+					lpszPipename,								// pipe name
+					PIPE_ACCESS_DUPLEX,					// read/write access
+					PIPE_TYPE_MESSAGE |					// message type pipe
+							PIPE_READMODE_MESSAGE | // message-read mode
+							PIPE_WAIT,							// blocking mode
+					PIPE_UNLIMITED_INSTANCES,		// max. instances
+					sizeof(VIRTUAL_MAP),				// output buffer size
+					sizeof(VIRTUAL_MAP),				// input buffer size
+					0,													// client time-out
+					NULL);											// no template file
 
 			if (hPipe == INVALID_HANDLE_VALUE)
 			{
@@ -388,11 +388,11 @@ extern "C"
 					memcpy(lpvMessage, (void *)&virtualmap, sizeof(VIRTUAL_MAP));
 
 					fSuccess = WriteFile(
-						hPipe,		// pipe handle
-						lpvMessage, // message
-						cbToWrite,	// message length
-						&cbWritten, // bytes written
-						NULL);		// not overlapped
+							hPipe,			// pipe handle
+							lpvMessage, // message
+							cbToWrite,	// message length
+							&cbWritten, // bytes written
+							NULL);			// not overlapped
 
 					if (!fSuccess)
 					{
@@ -403,11 +403,11 @@ extern "C"
 					// Read from the pipe.
 
 					fSuccess = ReadFile(
-						hPipe,		// pipe handle
-						lpvMessage, // buffer to receive reply
-						cbToWrite,	// size of buffer
-						&cbRead,	// number of bytes read
-						NULL);		// not overlapped
+							hPipe,			// pipe handle
+							lpvMessage, // buffer to receive reply
+							cbToWrite,	// size of buffer
+							&cbRead,		// number of bytes read
+							NULL);			// not overlapped
 
 					if (!fSuccess && GetLastError() != ERROR_MORE_DATA)
 						break;
@@ -635,7 +635,7 @@ extern "C"
 	 *
 	 * **/
 
-	#ifndef ITP_SAMPLE_RATE
+#ifndef ITP_SAMPLE_RATE
 #define ITP_SAMPLE_RATE (F_STEP_MAX * 2)
 #endif
 
@@ -885,15 +885,15 @@ extern "C"
 
 	void ticksimul(void)
 	{
-//		long t = stopCycleCounter();
-//		printf("Elapsed %dus\n\r", (int)((double)t / cyclesPerMicrosecond));
+		//		long t = stopCycleCounter();
+		//		printf("Elapsed %dus\n\r", (int)((double)t / cyclesPerMicrosecond));
 		for (int i = 0; i < (int)ceil(20 * ITP_SAMPLE_RATE / 1000); i++)
 		{
 			mcu_gen_step();
 		}
 
 		mcu_rtc_cb(mcu_millis());
-//		startCycleCounter();
+		//		startCycleCounter();
 	}
 
 	/**
@@ -913,6 +913,10 @@ extern "C"
 		mcu_enable_global_isr();
 	}
 
+    void mcu_io_reset(void)
+    {
+    }
+
     #include <QtCore>
 
     Q_DECL_EXPORT
@@ -926,13 +930,7 @@ extern "C"
         }
     }
 
-    Q_DECL_EXPORT
-    WindowsSerial* getSerial()
-    {
-        return &Serial;
-    }
-
-	uint8_t itp_set_step_mode(uint8_t mode) {return 0;}
+	uint8_t itp_set_step_mode(uint8_t mode) { return 0; }
 
 	uint32_t mcu_free_micros(void)
 	{
