@@ -256,6 +256,8 @@ extern "C"
 
 	void mcu_dotasks()
 	{
+        qt_loop();
+
 #ifdef MCU_HAS_UART
 		mcu_uart_process();
 #endif
