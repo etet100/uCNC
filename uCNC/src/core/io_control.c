@@ -25,6 +25,8 @@ static uint8_t io_lock_limits_mask;
 #endif
 static uint8_t io_invert_limits_mask;
 
+uint8_t io_virtual_inputs;
+
 #if ASSERT_PIN(PROBE)
 static volatile bool io_last_probe;
 static bool io_probe_enabled;
@@ -343,8 +345,10 @@ uint8_t io_get_limits(void)
 	value |= ((io_get_input(LIMIT_C)) ? LIMIT_C_IO_MASK : 0);
 #endif
 
-	uint8_t inv = g_settings.limits_invert_mask;
-	uint8_t result = (value ^ (inv & LIMITS_INV_MASK));
+    // uint8_t inv = g_settings.limits_invert_mask;
+    // uint8_t result = (value ^ (inv & LIMITS_INV_MASK));
+
+    uint8_t result = (io_virtual_inputs & 0b111);
 
 	if (cnc_get_exec_state(EXEC_HOMING))
 	{
@@ -413,7 +417,9 @@ bool io_get_probe(void)
 	return false;
 #else
 #if ASSERT_PIN(PROBE)
-	bool probe = (io_get_input(PROBE) != 0);
+    bool probe = (io_virtual_inputs & STEP7_IO_MASK);
+
+//        (io_get_input(PROBE) != 0);
 	return (!g_settings.probe_invert_mask) ? probe : !probe;
 #else
 	return false;

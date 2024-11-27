@@ -153,7 +153,9 @@ void cnc_run(void)
 			cnc_check_fault_systems();
 			cnc_state.loop_state = LOOP_REQUIRE_RESET;
 			break;
-		}
+        }
+
+        Sleep(1);
     }
 
 	do
@@ -172,7 +174,9 @@ void cnc_run(void)
 		{
 			break;
         }
-	} while (cnc_state.loop_state == LOOP_REQUIRE_RESET || cnc_get_exec_state(EXEC_KILL));
+
+        Sleep(1);
+    } while (cnc_state.loop_state == LOOP_REQUIRE_RESET || cnc_get_exec_state(EXEC_KILL));
 }
 
 uint8_t cnc_parse_cmd(void)
@@ -1033,10 +1037,35 @@ bool cnc_check_interlocking(void)
 	return true;
 }
 
+void protocol_get_rt_pos();
+extern uint8_t io_virtual_inputs;
+
 static void cnc_io_dotasks(void)
 {
 	// run internal mcu tasks (USB and communications)
 	mcu_dotasks();
+
+    float axis[3];
+    protocol_get_rt_pos(axis);
+
+    io_virtual_inputs = 0;
+    if (axis[0] < -10)
+    {
+        io_virtual_inputs |= STEP0_IO_MASK;
+    }
+    if (axis[1] < -10)
+    {
+        io_virtual_inputs |= STEP1_IO_MASK;
+    }
+    if (axis[2] > 20)
+    {
+        io_virtual_inputs |= STEP2_IO_MASK;
+    }
+    if (axis[2] < -10)
+    {
+        io_virtual_inputs |= STEP7_IO_MASK;
+    }
+
 	mcu_limits_changed_cb();
 	mcu_controls_changed_cb();
 	

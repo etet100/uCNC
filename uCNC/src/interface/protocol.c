@@ -343,6 +343,15 @@ static FORCEINLINE void protocol_send_status_tail(void)
 	g_planner_state.ovr_counter--;
 }
 
+void protocol_get_rt_pos(float *axis)
+{
+    //float axis[MAX(AXIS_COUNT, 3)];
+
+    int32_t steppos[AXIS_TO_STEPPERS];
+    itp_get_rt_position(steppos);
+    kinematics_steps_to_coordinates(steppos, axis);
+}
+
 void protocol_send_status(void)
 {
 	if (protocol_busy || serial_tx_busy())
