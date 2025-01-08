@@ -154,8 +154,6 @@ void cnc_run(void)
 			cnc_state.loop_state = LOOP_REQUIRE_RESET;
 			break;
         }
-
-        Sleep(1);
     }
 
 	do
@@ -174,8 +172,6 @@ void cnc_run(void)
 		{
 			break;
         }
-
-        Sleep(1);
     } while (cnc_state.loop_state == LOOP_REQUIRE_RESET || cnc_get_exec_state(EXEC_KILL));
 }
 
@@ -1049,20 +1045,22 @@ static void cnc_io_dotasks(void)
     protocol_get_rt_pos(axis);
 
     io_virtual_inputs = 0;
-    if (axis[0] < -10)
+//    if (cnc_get_exec_state(EXEC_HOMING))
     {
-        io_virtual_inputs |= STEP0_IO_MASK;
+        if (axis[0] < -5.000)
+        {
+            io_virtual_inputs |= STEP0_IO_MASK;
+        }
+        if (axis[1] < -5.000)
+        {
+            io_virtual_inputs |= STEP1_IO_MASK;
+        }
+        if (axis[2] > 5.000)
+        {
+            io_virtual_inputs |= STEP2_IO_MASK;
+        }
     }
-    if (axis[1] < -10)
-    {
-        io_virtual_inputs |= STEP1_IO_MASK;
-    }
-    if (axis[2] > 20)
-    {
-        io_virtual_inputs |= STEP2_IO_MASK;
-    }
-    if (axis[2] < -10)
-    {
+    if (axis[2] < -5.000) {
         io_virtual_inputs |= STEP7_IO_MASK;
     }
 
