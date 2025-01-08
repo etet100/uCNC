@@ -780,40 +780,72 @@ extern "C"
 	 *
 	 *
 	 * **/
-	HANDLE win_timer;
-	void (*timer_func_handler_pntr)(void);
-	unsigned long perf_start;
-	double cyclesPerMicrosecond;
-	double cyclesPerMillisecond;
-
-	volatile unsigned long g_cpu_freq = 0;
-
-	VOID CALLBACK timer_sig_handler(PVOID, BOOLEAN);
-
-	int start_timer(int mSec, void (*timer_func_handler)(void))
-	{
-		timer_func_handler_pntr = timer_func_handler;
-
-		if (CreateTimerQueueTimer(&win_timer, NULL, (WAITORTIMERCALLBACK)timer_sig_handler, NULL, mSec, mSec, WT_EXECUTEINTIMERTHREAD) == 0)
-		{
-			printf("\nCreateTimerQueueTimer() error\n");
-			return (1);
-		}
-
-		return (0);
-	}
-
-	VOID CALLBACK timer_sig_handler(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
-	{
-		timer_func_handler_pntr();
-	}
+    void (*timer_func_handler_pntr)(void);
 
     #ifdef WINDOWS
-        VOID CALLBACK timer_sig_handler(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
-        {
-            timer_func_handler_pntr();
-        }
+        HANDLE win_timer;
+        unsigned long perf_start;
+        double cyclesPerMicrosecond;
+        double cyclesPerMillisecond;
+
+        volatile unsigned long g_cpu_freq = 0;
+
+        VOID CALLBACK timer_sig_handler(PVOID, BOOLEAN);
     #endif
+
+    void linuxHandler(union sigval sv)
+    {
+        timer_func_handler_pntr();
+    }
+
+#ifdef LINUX
+    timer_t timer;
+
+    int start_timer(int mSec, void (*timer_func_handler)(void))
+	{
+        struct sigevent sev;
+        struct itimerspec its;
+
+        sev.sigev_notify = SIGEV_THREAD;
+        sev.sigev_notify_function = linuxHandler;
+        sev.sigev_notify_attributes = NULL;
+        sev.sigev_value.sival_ptr = &timer;
+
+        if (timer_create(CLOCK_REALTIME, &sev, &timer) == -1)
+        {
+            printf("timer_create() error\n");
+            return (1);
+        }
+
+        timer_func_handler_pntr = timer_func_handler;
+
+        its.it_value.tv_sec = mSec / 1000;
+        its.it_value.tv_nsec = (mSec % 1000) * 1000000;
+        its.it_interval.tv_sec = mSec / 1000;
+        its.it_interval.tv_nsec = (mSec % 1000) * 1000000;
+
+        if (timer_settime(timer, 0, &its, NULL) == -1)
+        {
+            printf("timer_settime() error\n");
+            return (1);
+        }
+
+        // if (CreateTimerQueueTimer(&win_timer, NULL, (WAITORTIMERCALLBACK)timer_sig_handler, NULL, mSec, mSec, WT_EXECUTEINTIMERTHREAD) == 0)
+        // {
+        // 	printf("\nCreateTimerQueueTimer() error\n");
+        // 	return (1);
+        // }
+
+        return (0);
+	}
+#endif
+
+#ifdef WINDOWS
+    VOID CALLBACK timer_sig_handler(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
+    {
+        timer_func_handler_pntr();
+    }
+#endif
 
 	void stop_timer(void)
 	{
