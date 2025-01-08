@@ -808,13 +808,25 @@ extern "C"
 		timer_func_handler_pntr();
 	}
 
+    #ifdef WINDOWS
+        VOID CALLBACK timer_sig_handler(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
+        {
+            timer_func_handler_pntr();
+        }
+    #endif
+
 	void stop_timer(void)
 	{
-		DeleteTimerQueueTimer(NULL, win_timer, NULL);
-		CloseHandle(win_timer);
-	}
+#ifdef WINDOWS
+        DeleteTimerQueueTimer(NULL, win_timer, NULL);
+        CloseHandle(win_timer);
+#else
+        timer_delete(timer);
+#endif
+    }
 
-	unsigned long getCPUFreq(void)
+#ifdef WINDOWS
+    unsigned long getCPUFreq(void)
 	{
 		LARGE_INTEGER perf_counter;
 
@@ -829,6 +841,7 @@ extern "C"
 
 		return perf_counter.QuadPart;
 	}
+#endif
 
 #ifdef WINDOWS
     unsigned long getTickCounter(void)
@@ -851,13 +864,17 @@ extern "C"
 #endif
 	}
 
+
 	unsigned long stopCycleCounter(void)
 	{
-		return (getTickCounter() - perf_start);
-	}
+        #ifdef WINDOWS
+            return (getTickCounter() - perf_start);
+        #endif
+    }
 
 	void virtual_delay_us(uint16_t delay)
 	{
+#ifdef WINDOWS
 		unsigned long start = getTickCounter();
 		double elapsed = 0;
 		do
@@ -865,6 +882,10 @@ extern "C"
 			elapsed = ((double)(getTickCounter()) - (double)(start)) / (double)(getCPUFreq());
 			elapsed *= 1000000;
 		} while (elapsed < delay);
+#else
+        uint32_t wait_to = mcu_micros() + delay;
+        while (mcu_micros() < wait_to);
+#endif
 	}
 
 	uint32_t mcu_micros(void)
