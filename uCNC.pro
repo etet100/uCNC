@@ -10,6 +10,14 @@ DEFINES += MCU=MCU_VIRTUAL_WIN
 CONFIG -= debug_and_release
 #DEFINES += WIN_INTERFACE=0
 
+win32 {
+    DEFINES += WINDOWS=1
+}
+
+unix {
+    DEFINES += LINUX=1
+}
+
 HEADERS += \
     makefiles/virtual/WindowsSerial.h \
     uCNC/boardmap_overrides.h \

@@ -24,7 +24,13 @@ extern "C"
 #endif
 
 #include <stdio.h>
-#include <conio.h>
+#ifdef WINDOWS
+    #include <conio.h>
+#else
+    #include <time.h>
+    #include <pthread.h>
+    #include <signal.h>
+#endif
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -231,9 +237,13 @@ extern "C"
 		}
 	}
 
-#include <conio.h>
+#ifdef WINDOWS
+    #include <conio.h>
+#endif
+
 	void mcu_uart2_process()
 	{
+        #ifdef WINDOWS
 		while (kbhit())
 		{
 			char c = getch();
@@ -251,6 +261,7 @@ extern "C"
 				BUFFER_ENQUEUE(uart2_rx, &c);
 			}
 		}
+        #endif
 	}
 #endif
 
@@ -341,6 +352,7 @@ extern "C"
 
 	void *ioserver(void *args)
 	{
+#ifdef WINDOWS
 		HANDLE hPipe;
 		TCHAR chBuf[sizeof(VIRTUAL_MAP)];
 		BOOL fSuccess = FALSE;
@@ -444,6 +456,7 @@ extern "C"
 		}
 
 		return NULL;
+#endif
 	}
 
 	uint8_t mcu_get_pin_offset(uint8_t pin)
@@ -817,21 +830,25 @@ extern "C"
 		return perf_counter.QuadPart;
 	}
 
-	unsigned long getTickCounter(void)
-	{
-		LARGE_INTEGER perf_counter;
-		QueryPerformanceCounter(&perf_counter);
-		return perf_counter.QuadPart;
-	}
+#ifdef WINDOWS
+    unsigned long getTickCounter(void)
+    {
+        LARGE_INTEGER perf_counter;
+        QueryPerformanceCounter(&perf_counter);
+        return perf_counter.QuadPart;
+    }
+#endif
 
 	void startCycleCounter(void)
 	{
+#ifdef WINDOWS
 		if (getCPUFreq() == 0)
 		{
 			return;
 		}
 
 		perf_start = getTickCounter();
+#endif
 	}
 
 	unsigned long stopCycleCounter(void)
@@ -852,17 +869,29 @@ extern "C"
 
 	uint32_t mcu_micros(void)
 	{
-		LARGE_INTEGER perf_counter;
-		QueryPerformanceCounter(&perf_counter);
-		return (uint32_t)(perf_counter.QuadPart / cyclesPerMicrosecond);
+        #ifdef WINDOWS
+            LARGE_INTEGER perf_counter;
+            QueryPerformanceCounter(&perf_counter);
+            return (uint32_t)(perf_counter.QuadPart / cyclesPerMicrosecond);
+        #else
+            struct timespec spec;
+            clock_gettime(CLOCK_MONOTONIC, &spec);
+            return (uint32_t)(spec.tv_sec * 1000000 + spec.tv_nsec / 1000);
+        #endif
 	}
 
 	uint32_t mcu_millis(void)
 	{
-		LARGE_INTEGER perf_counter;
-		QueryPerformanceCounter(&perf_counter);
-		return (uint32_t)(perf_counter.QuadPart / cyclesPerMillisecond);
-	}
+        #ifdef WINDOWS
+            LARGE_INTEGER perf_counter;
+            QueryPerformanceCounter(&perf_counter);
+            return (uint32_t)(perf_counter.QuadPart / cyclesPerMillisecond);
+        #else
+            struct timespec spec;
+            clock_gettime(CLOCK_MONOTONIC, &spec);
+            return (uint32_t)(spec.tv_sec * 1000 + spec.tv_nsec / 1000000);
+        #endif
+    }
 
 	/**
 	 * configures a single shot timeout in us
@@ -907,9 +936,14 @@ extern "C"
 		virtualmap.special_inputs = 0;
 		virtualmap.inputs = 0;
 		virtualmap.outputs = 0;
-		g_cpu_freq = getCPUFreq();
-		start_timer(20, &ticksimul);
-		pthread_create(&thread_io, NULL, &ioserver, NULL);
+
+#ifdef WINDOWS
+        g_cpu_freq = getCPUFreq();
+#endif
+        start_timer(20, &ticksimul);
+#ifdef WINDOWS
+        pthread_create(&thread_io, NULL, &ioserver, NULL);
+#endif
 		mcu_enable_global_isr();
 	}
 
