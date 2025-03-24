@@ -24,7 +24,13 @@ extern "C"
 #endif
 
 #include <stdio.h>
-#include <conio.h>
+#ifdef WINDOWS
+    #include <conio.h>
+#else
+    #include <time.h>
+    #include <pthread.h>
+    #include <signal.h>
+#endif
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -241,9 +247,13 @@ extern "C"
 		}
 	}
 
-#include <conio.h>
+#ifdef WINDOWS
+    #include <conio.h>
+#endif
+
 	void mcu_uart2_process()
 	{
+        #ifdef WINDOWS
 		while (kbhit())
 		{
 			char c = getch();
@@ -261,6 +271,7 @@ extern "C"
 				BUFFER_ENQUEUE(uart2_rx, &c);
 			}
 		}
+        #endif
 	}
 #endif
 
@@ -351,11 +362,12 @@ extern "C"
 
 	void *ioserver(void *args)
 	{
-//		HANDLE hPipe;
-//		TCHAR chBuf[sizeof(VIRTUAL_MAP)];
-//		BOOL fSuccess = FALSE;
-//		DWORD cbRead, cbToWrite, cbWritten, dwMode;
-//		LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ucncio");
+#ifdef WINDOWS
+		HANDLE hPipe;
+		TCHAR chBuf[sizeof(VIRTUAL_MAP)];
+		BOOL fSuccess = FALSE;
+		DWORD cbRead, cbToWrite, cbWritten, dwMode;
+		LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ucncio");
 
 //		// Try to open a named pipe; wait for it, if necessary.
 
@@ -453,7 +465,8 @@ extern "C"
 //			CloseHandle(hPipe);
 //		}
 
-        return NULL;
+		return NULL;
+#endif
 	}
 
 	uint8_t mcu_get_pin_offset(uint8_t pin)
@@ -777,41 +790,85 @@ extern "C"
 	 *
 	 *
 	 * **/
-	HANDLE win_timer;
-	void (*timer_func_handler_pntr)(void);
-	unsigned long perf_start;
-	double cyclesPerMicrosecond;
-	double cyclesPerMillisecond;
+    void (*timer_func_handler_pntr)(void);
 
-	volatile unsigned long g_cpu_freq = 0;
+    #ifdef WINDOWS
+        HANDLE win_timer;
+        unsigned long perf_start;
+        double cyclesPerMicrosecond;
+        double cyclesPerMillisecond;
 
-	VOID CALLBACK timer_sig_handler(PVOID, BOOLEAN);
+        volatile unsigned long g_cpu_freq = 0;
 
-	int start_timer(int mSec, void (*timer_func_handler)(void))
+        VOID CALLBACK timer_sig_handler(PVOID, BOOLEAN);
+    #endif
+
+    void linuxHandler(union sigval sv)
+    {
+        timer_func_handler_pntr();
+    }
+
+#ifdef LINUX
+    timer_t timer;
+
+    int start_timer(int mSec, void (*timer_func_handler)(void))
 	{
-		timer_func_handler_pntr = timer_func_handler;
+        struct sigevent sev;
+        struct itimerspec its;
 
-		if (CreateTimerQueueTimer(&win_timer, NULL, (WAITORTIMERCALLBACK)timer_sig_handler, NULL, mSec, mSec, WT_EXECUTEINTIMERTHREAD) == 0)
-		{
-			printf("\nCreateTimerQueueTimer() error\n");
-			return (1);
-		}
+        sev.sigev_notify = SIGEV_THREAD;
+        sev.sigev_notify_function = linuxHandler;
+        sev.sigev_notify_attributes = NULL;
+        sev.sigev_value.sival_ptr = &timer;
 
-		return (0);
+        if (timer_create(CLOCK_REALTIME, &sev, &timer) == -1)
+        {
+            printf("timer_create() error\n");
+            return (1);
+        }
+
+        timer_func_handler_pntr = timer_func_handler;
+
+        its.it_value.tv_sec = mSec / 1000;
+        its.it_value.tv_nsec = (mSec % 1000) * 1000000;
+        its.it_interval.tv_sec = mSec / 1000;
+        its.it_interval.tv_nsec = (mSec % 1000) * 1000000;
+
+        if (timer_settime(timer, 0, &its, NULL) == -1)
+        {
+            printf("timer_settime() error\n");
+            return (1);
+        }
+
+        // if (CreateTimerQueueTimer(&win_timer, NULL, (WAITORTIMERCALLBACK)timer_sig_handler, NULL, mSec, mSec, WT_EXECUTEINTIMERTHREAD) == 0)
+        // {
+        // 	printf("\nCreateTimerQueueTimer() error\n");
+        // 	return (1);
+        // }
+
+        return (0);
 	}
+#endif
 
-	VOID CALLBACK timer_sig_handler(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
-	{
-		timer_func_handler_pntr();
-	}
+#ifdef WINDOWS
+    VOID CALLBACK timer_sig_handler(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
+    {
+        timer_func_handler_pntr();
+    }
+#endif
 
 	void stop_timer(void)
 	{
-		DeleteTimerQueueTimer(NULL, win_timer, NULL);
-		CloseHandle(win_timer);
-	}
+#ifdef WINDOWS
+        DeleteTimerQueueTimer(NULL, win_timer, NULL);
+        CloseHandle(win_timer);
+#else
+        timer_delete(timer);
+#endif
+    }
 
-	unsigned long getCPUFreq(void)
+#ifdef WINDOWS
+    unsigned long getCPUFreq(void)
 	{
 		LARGE_INTEGER perf_counter;
 
@@ -826,31 +883,40 @@ extern "C"
 
 		return perf_counter.QuadPart;
 	}
+#endif
 
-	unsigned long getTickCounter(void)
-	{
-		LARGE_INTEGER perf_counter;
-		QueryPerformanceCounter(&perf_counter);
-		return perf_counter.QuadPart;
-	}
+#ifdef WINDOWS
+    unsigned long getTickCounter(void)
+    {
+        LARGE_INTEGER perf_counter;
+        QueryPerformanceCounter(&perf_counter);
+        return perf_counter.QuadPart;
+    }
+#endif
 
 	void startCycleCounter(void)
 	{
+#ifdef WINDOWS
 		if (getCPUFreq() == 0)
 		{
 			return;
 		}
 
 		perf_start = getTickCounter();
+#endif
 	}
+
 
 	unsigned long stopCycleCounter(void)
 	{
-		return (getTickCounter() - perf_start);
-	}
+        #ifdef WINDOWS
+            return (getTickCounter() - perf_start);
+        #endif
+    }
 
 	void virtual_delay_us(uint16_t delay)
 	{
+#ifdef WINDOWS
 		unsigned long start = getTickCounter();
 		double elapsed = 0;
 		do
@@ -858,21 +924,37 @@ extern "C"
 			elapsed = ((double)(getTickCounter()) - (double)(start)) / (double)(getCPUFreq());
 			elapsed *= 1000000;
 		} while (elapsed < delay);
+#else
+        uint32_t wait_to = mcu_micros() + delay;
+        while (mcu_micros() < wait_to);
+#endif
 	}
 
 	uint32_t mcu_micros(void)
 	{
-		LARGE_INTEGER perf_counter;
-		QueryPerformanceCounter(&perf_counter);
-		return (uint32_t)(perf_counter.QuadPart / cyclesPerMicrosecond);
+        #ifdef WINDOWS
+            LARGE_INTEGER perf_counter;
+            QueryPerformanceCounter(&perf_counter);
+            return (uint32_t)(perf_counter.QuadPart / cyclesPerMicrosecond);
+        #else
+            struct timespec spec;
+            clock_gettime(CLOCK_MONOTONIC, &spec);
+            return (uint32_t)(spec.tv_sec * 1000000 + spec.tv_nsec / 1000);
+        #endif
 	}
 
 	uint32_t mcu_millis(void)
 	{
-		LARGE_INTEGER perf_counter;
-		QueryPerformanceCounter(&perf_counter);
-		return (uint32_t)(perf_counter.QuadPart / cyclesPerMillisecond);
-	}
+        #ifdef WINDOWS
+            LARGE_INTEGER perf_counter;
+            QueryPerformanceCounter(&perf_counter);
+            return (uint32_t)(perf_counter.QuadPart / cyclesPerMillisecond);
+        #else
+            struct timespec spec;
+            clock_gettime(CLOCK_MONOTONIC, &spec);
+            return (uint32_t)(spec.tv_sec * 1000 + spec.tv_nsec / 1000000);
+        #endif
+    }
 
 	/**
 	 * configures a single shot timeout in us
@@ -917,9 +999,14 @@ extern "C"
 		virtualmap.special_inputs = 0;
 		virtualmap.inputs = 0;
 		virtualmap.outputs = 0;
-		g_cpu_freq = getCPUFreq();
-		start_timer(20, &ticksimul);
-		pthread_create(&thread_io, NULL, &ioserver, NULL);
+
+#ifdef WINDOWS
+        g_cpu_freq = getCPUFreq();
+#endif
+        start_timer(20, &ticksimul);
+#ifdef WINDOWS
+        pthread_create(&thread_io, NULL, &ioserver, NULL);
+#endif
 		mcu_enable_global_isr();
 	}
 

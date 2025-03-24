@@ -4,7 +4,6 @@
 #define ARDUINO_WAIT_TIME 2000
 
 #include <stdio.h>
-#include <conio.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -12,10 +11,17 @@
 #include <pthread.h>
 #include <math.h>
 #include <QString>
+#ifdef WINDOWS
+#include <conio.h>
 #include <Windows.h>
+#endif
 #include <QtCore>
 #include <QLocalSocket>
 #include <QDebug>
+
+#ifdef LINUX
+typedef uint32_t DWORD;
+#endif
 
 class WindowsSerial
 {

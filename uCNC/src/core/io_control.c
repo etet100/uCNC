@@ -417,9 +417,9 @@ bool io_get_probe(void)
 	return false;
 #else
 #if ASSERT_PIN(PROBE)
-    bool probe = (io_virtual_inputs & STEP7_IO_MASK);
+    //bool probe = (io_virtual_inputs & STEP7_IO_MASK);
 
-//        (io_get_input(PROBE) != 0);
+    bool probe = (io_get_input(PROBE) != 0);
 	return (!g_settings.probe_invert_mask) ? probe : !probe;
 #else
 	return false;

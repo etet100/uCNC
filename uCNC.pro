@@ -20,6 +20,14 @@ CONFIG -= debug_and_release
 LIBS += -pthread
 #DEFINES += WIN_INTERFACE=0
 
+win32 {
+    DEFINES += WINDOWS=1
+}
+
+unix {
+    DEFINES += LINUX=1
+}
+
 HEADERS += \
     makefiles/virtual/WindowsSerial.h \
     uCNC/boardmap_overrides.h \
