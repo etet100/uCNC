@@ -803,12 +803,12 @@ extern "C"
         VOID CALLBACK timer_sig_handler(PVOID, BOOLEAN);
     #endif
 
+#ifdef LINUX
     void linuxHandler(union sigval sv)
     {
         timer_func_handler_pntr();
     }
 
-#ifdef LINUX
     timer_t timer;
 
     int start_timer(int mSec, void (*timer_func_handler)(void))
@@ -1002,12 +1002,12 @@ extern "C"
 
 #ifdef WINDOWS
         g_cpu_freq = getCPUFreq();
-#endif
-        start_timer(20, &ticksimul);
-#ifdef WINDOWS
         pthread_create(&thread_io, NULL, &ioserver, NULL);
 #endif
-		mcu_enable_global_isr();
+#ifdef LINUX
+        start_timer(20, &ticksimul);
+#endif
+        mcu_enable_global_isr();
 	}
 
     void mcu_io_reset(void)
