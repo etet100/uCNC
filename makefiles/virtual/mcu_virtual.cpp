@@ -952,13 +952,13 @@ extern "C"
  * Emulate internal flash
  */
 #include <dirent.h>
-#include "src/modules/file_system.h"
+#include "../../uCNC/src/modules/file_system.h"
 
 	static fs_t flash_fs;
 
 	bool flash_fs_finfo(const char *path, fs_file_info_t *finfo)
 	{
-		WIN32_FIND_DATA findFileData;
+        _WIN32_FIND_DATAA findFileData;
 		HANDLE hFind;
 
 		// Ensure finfo structure is not NULL
@@ -978,7 +978,7 @@ extern "C"
 		}
 
 		// Try to find the file or directory
-		hFind = FindFirstFile(fpath, &findFileData);
+        hFind = FindFirstFileA(fpath, &findFileData);
 		if (hFind == INVALID_HANDLE_VALUE)
 		{
 			// File or directory not found
