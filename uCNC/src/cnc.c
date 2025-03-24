@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "cnc.h"
+#include <windows.h>
 
 #define LOOP_STARTUP_RESET 0
 #define LOOP_UNLOCK 1

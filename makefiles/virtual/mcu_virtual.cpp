@@ -34,7 +34,7 @@ extern "C"
 // #include <winsock2.h>
 // #include <ws2tcpip.h>
 // #pragma comment(lib, "ws2_32.lib") // Winsock Library
-// #include <windows.h>
+#include <windows.h>
 #ifdef __cplusplus
 }
 #endif
@@ -70,6 +70,16 @@ extern "C"
     {
         QCoreApplication::processEvents();
     }
+
+    void qt_debug(int a)
+    {
+        qDebug() << a;
+    }
+
+    void qt_debug_f(float a)
+    {
+        qDebug() << a;
+    }
 /**
  *
  *
@@ -81,7 +91,7 @@ extern "C"
 #ifdef MCU_HAS_UART
 	WindowsSerial Serial = WindowsSerial(UART_PORT_NAME);
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE 64
+#define UART_TX_BUFFER_SIZE 128
 #endif
 	DECL_BUFFER(uint8_t, uart_tx, UART_TX_BUFFER_SIZE);
 	DECL_BUFFER(uint8_t, uart_rx, RX_BUFFER_SIZE);
@@ -341,109 +351,109 @@ extern "C"
 
 	void *ioserver(void *args)
 	{
-		HANDLE hPipe;
-		TCHAR chBuf[sizeof(VIRTUAL_MAP)];
-		BOOL fSuccess = FALSE;
-		DWORD cbRead, cbToWrite, cbWritten, dwMode;
-		LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ucncio");
+//		HANDLE hPipe;
+//		TCHAR chBuf[sizeof(VIRTUAL_MAP)];
+//		BOOL fSuccess = FALSE;
+//		DWORD cbRead, cbToWrite, cbWritten, dwMode;
+//		LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\ucncio");
 
-		// Try to open a named pipe; wait for it, if necessary.
+//		// Try to open a named pipe; wait for it, if necessary.
 
-		while (1)
-		{
-			BOOL fConnected = FALSE;
+//		while (1)
+//		{
+//			BOOL fConnected = FALSE;
 
-			hPipe = CreateNamedPipe(
-					lpszPipename,								// pipe name
-					PIPE_ACCESS_DUPLEX,					// read/write access
-					PIPE_TYPE_MESSAGE |					// message type pipe
-							PIPE_READMODE_MESSAGE | // message-read mode
-							PIPE_WAIT,							// blocking mode
-					PIPE_UNLIMITED_INSTANCES,		// max. instances
-					sizeof(VIRTUAL_MAP),				// output buffer size
-					sizeof(VIRTUAL_MAP),				// input buffer size
-					0,													// client time-out
-					NULL);											// no template file
+            // hPipe = CreateNamedPipe(
+            // 		lpszPipename,								// pipe name
+            // 		PIPE_ACCESS_DUPLEX,					// read/write access
+            // 		PIPE_TYPE_MESSAGE |					// message type pipe
+            // 				PIPE_READMODE_MESSAGE | // message-read mode
+            // 				PIPE_WAIT,							// blocking mode
+            // 		PIPE_UNLIMITED_INSTANCES,		// max. instances
+            // 		sizeof(VIRTUAL_MAP),				// output buffer size
+            // 		sizeof(VIRTUAL_MAP),				// input buffer size
+            // 		0,													// client time-out
+            // 		NULL);											// no template file
 
-			if (hPipe == INVALID_HANDLE_VALUE)
-			{
-				printf("CreateNamedPipe failed, GLE=%d.\n", GetLastError());
-				return NULL;
-			}
+//			if (hPipe == INVALID_HANDLE_VALUE)
+//			{
+//				printf("CreateNamedPipe failed, GLE=%d.\n", GetLastError());
+//				return NULL;
+//			}
 
-			// Wait for the client to connect; if it succeeds,
-			// the function returns a nonzero value. If the function
-			// returns zero, GetLastError returns ERROR_PIPE_CONNECTED.
+//			// Wait for the client to connect; if it succeeds,
+//			// the function returns a nonzero value. If the function
+//			// returns zero, GetLastError returns ERROR_PIPE_CONNECTED.
 
-			fConnected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+//			fConnected = ConnectNamedPipe(hPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
 
-			if (fConnected)
-			{
-				// Send a message to the pipe server.
+//			if (fConnected)
+//			{
+//				// Send a message to the pipe server.
 
-				cbToWrite = sizeof(VIRTUAL_MAP);
-				uint8_t lpvMessage[sizeof(VIRTUAL_MAP)];
-				do
-				{
-					memcpy(lpvMessage, (void *)&virtualmap, sizeof(VIRTUAL_MAP));
+//				cbToWrite = sizeof(VIRTUAL_MAP);
+//				uint8_t lpvMessage[sizeof(VIRTUAL_MAP)];
+//				do
+//				{
+//					memcpy(lpvMessage, (void *)&virtualmap, sizeof(VIRTUAL_MAP));
 
-					fSuccess = WriteFile(
-							hPipe,			// pipe handle
-							lpvMessage, // message
-							cbToWrite,	// message length
-							&cbWritten, // bytes written
-							NULL);			// not overlapped
+                    // fSuccess = WriteFile(
+                    // 		hPipe,			// pipe handle
+                    // 		lpvMessage, // message
+                    // 		cbToWrite,	// message length
+                    // 		&cbWritten, // bytes written
+                    // 		NULL);			// not overlapped
 
-					if (!fSuccess)
-					{
-						printf("WriteFile to pipe failed. GLE=%d\n", GetLastError());
-						break;
-					}
+//					if (!fSuccess)
+//					{
+//						printf("WriteFile to pipe failed. GLE=%d\n", GetLastError());
+//						break;
+//					}
 
-					// Read from the pipe.
+//					// Read from the pipe.
 
-					fSuccess = ReadFile(
-							hPipe,			// pipe handle
-							lpvMessage, // buffer to receive reply
-							cbToWrite,	// size of buffer
-							&cbRead,		// number of bytes read
-							NULL);			// not overlapped
+                    // fSuccess = ReadFile(
+                    // 		hPipe,			// pipe handle
+                    // 		lpvMessage, // buffer to receive reply
+                    // 		cbToWrite,	// size of buffer
+                    // 		&cbRead,		// number of bytes read
+                    // 		NULL);			// not overlapped
 
-					if (!fSuccess && GetLastError() != ERROR_MORE_DATA)
-						break;
+//					if (!fSuccess && GetLastError() != ERROR_MORE_DATA)
+//						break;
 
-					VIRTUAL_MAP *ptr = (VIRTUAL_MAP *)&lpvMessage;
-					if (virtualmap.special_inputs != ptr->special_inputs)
-					{
-						uint32_t diff = virtualmap.special_inputs ^ ptr->special_inputs;
-						virtualmap.special_inputs = ptr->special_inputs;
+//					VIRTUAL_MAP *ptr = (VIRTUAL_MAP *)&lpvMessage;
+//					if (virtualmap.special_inputs != ptr->special_inputs)
+//					{
+//						uint32_t diff = virtualmap.special_inputs ^ ptr->special_inputs;
+//						virtualmap.special_inputs = ptr->special_inputs;
 
-						if (diff & 0x1FFUL)
-							mcu_limits_changed_cb();
-						if (diff & 0x200UL)
-							mcu_probe_changed_cb();
-						if (diff & 0x3C00UL)
-							mcu_controls_changed_cb();
-					}
-					if (virtualmap.inputs != ptr->inputs)
-					{
-						virtualmap.inputs = ptr->inputs;
-						mcu_inputs_changed_cb();
-					}
-					memcpy((void *)virtualmap.analog, ptr->analog, 16);
+//						if (diff & 0x1FFUL)
+//							mcu_limits_changed_cb();
+//						if (diff & 0x200UL)
+//							mcu_probe_changed_cb();
+//						if (diff & 0x3C00UL)
+//							mcu_controls_changed_cb();
+//					}
+//					if (virtualmap.inputs != ptr->inputs)
+//					{
+//						virtualmap.inputs = ptr->inputs;
+//						mcu_inputs_changed_cb();
+//					}
+//					memcpy((void *)virtualmap.analog, ptr->analog, 16);
 
-				} while (fSuccess); // repeat loop if ERROR_MORE_DATA
+//				} while (fSuccess); // repeat loop if ERROR_MORE_DATA
 
-				if (!fSuccess)
-				{
-					printf("ReadFile from pipe failed. GLE=%d\n", GetLastError());
-				}
-			}
+//				if (!fSuccess)
+//				{
+//					printf("ReadFile from pipe failed. GLE=%d\n", GetLastError());
+//				}
+//			}
 
-			CloseHandle(hPipe);
-		}
+//			CloseHandle(hPipe);
+//		}
 
-		return NULL;
+        return NULL;
 	}
 
 	uint8_t mcu_get_pin_offset(uint8_t pin)

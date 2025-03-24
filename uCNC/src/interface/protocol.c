@@ -15,6 +15,9 @@
 
 #include "../cnc.h"
 
+void qt_debug(int a);
+void qt_debug_f(float a);
+
 #if defined(ENABLE_EXTRA_SYSTEM_CMDS) && defined(ENABLE_PIN_TRANSLATIONS)
 const char pin_name_1[] __rom__ = "STEP0";
 const char pin_name_2[] __rom__ = "STEP1";
@@ -476,6 +479,9 @@ void protocol_send_status(void)
 	serial_print_fltarr(axis, AXIS_COUNT);
 
 #if TOOL_COUNT > 0
+    // qt_debug(serial_freebytes());
+    // qt_debug(serial_tx_busy());
+
 	protocol_send_string(MSG_STATUS_FS);
 #else
 	protocol_send_string(MSG_STATUS_F);

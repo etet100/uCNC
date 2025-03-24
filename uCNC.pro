@@ -2,12 +2,22 @@
 #TEMPLATE = app
 #CONFIG += console
 
+lessThan(QT_MAJOR_VERSION, 6) {
+    message("Cannot use Qt $${QT_VERSION}")
+    error("Use Qt 6.8 or newer")
+}
+equals(QT_MAJOR_VERSION, 6):lessThan(QT_MINOR_VERSION, 8) {
+    message("Cannot use Qt $${QT_VERSION}")
+    error("Use Qt 6.8 or newer")
+}
+
 TEMPLATE = lib
 QT += network
 TARGET = uCNC
 DEFINES += BOARD=BOARD_VIRTUAL
 DEFINES += MCU=MCU_VIRTUAL_WIN
 CONFIG -= debug_and_release
+LIBS += -pthread
 #DEFINES += WIN_INTERFACE=0
 
 HEADERS += \

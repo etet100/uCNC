@@ -17,18 +17,18 @@ RM       = rm.exe -f
 
 
 
-.PHONY: all all-before all-after clean clean-custom
+#.PHONY: all all-before all-after clean clean-custom
 
-all: all-before $(BIN) all-after
+#all: all-before $(BIN) all-after
 
-clean: clean-custom
-	${RM} $(OBJ) $(DOBJ) $(BIN)
+#clean: clean-custom
+#	${RM} $(OBJ) $(DOBJ) $(BIN)
 
-$(BIN): $(LINKOBJ)
-	$(CC) $(LINKOBJ) -o $(BIN) $(LIBS)
+#$(BIN): $(LINKOBJ)
+#	$(CC) $(LINKOBJ) -o $(BIN) $(LIBS)
 
-$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
-	$(CC) -c $< -o $@ $(CFLAGS)
+#$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
+#	$(CC) -c $< -o $@ $(CFLAGS)
 
-$(BUILDDIR)/mcu.o: mcu_atmega328.c
-	$(CC) -c $< -o $@ $(CFLAGS)
+#$(BUILDDIR)/mcu.o: mcu_atmega328.c
+#	$(CC) -c $< -o $@ $(CFLAGS)

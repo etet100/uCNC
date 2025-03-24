@@ -15,7 +15,7 @@
 #include <Windows.h>
 #include <QtCore>
 #include <QLocalSocket>
-
+#include <QDebug>
 
 class WindowsSerial
 {
