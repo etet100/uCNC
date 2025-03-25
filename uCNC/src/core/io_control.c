@@ -25,6 +25,7 @@ static uint8_t io_lock_limits_mask;
 #endif
 static uint8_t io_invert_limits_mask;
 
+// @GPILOT
 uint8_t io_virtual_inputs;
 
 #if ASSERT_PIN(PROBE)
@@ -361,6 +362,7 @@ uint8_t io_get_limits(void)
 	value |= ((io_get_input(LIMIT_C)) ? LIMIT_C_IO_MASK : 0);
 #endif
 
+    // @GPILOT
     // uint8_t inv = g_settings.limits_invert_mask;
     // uint8_t result = (value ^ (inv & LIMITS_INV_MASK));
 

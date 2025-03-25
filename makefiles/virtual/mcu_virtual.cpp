@@ -1,3 +1,4 @@
+// @GPILOT
 /*
 	Name: mcu_virtual.cpp
 	Description: Simulates and MCU that runs on a Windows PC. This is mainly used to test/simulate µCNC.
@@ -459,8 +460,22 @@ extern "C"
 	{
 	}
 
+    // @GPILOT
+    extern uint8_t io_virtual_inputs;
 	uint8_t mcu_get_input(uint8_t pin)
 	{
+        switch (pin)
+        {
+            case LIMIT_X:
+                return io_virtual_inputs & STEP0_IO_MASK;
+            case LIMIT_Y:
+                return io_virtual_inputs & STEP1_IO_MASK;
+            case LIMIT_Z:
+                return io_virtual_inputs & STEP2_IO_MASK;
+            case PROBE:
+                return io_virtual_inputs & STEP7_IO_MASK;
+        }
+
 		uint8_t offset = mcu_get_pin_offset(pin);
 		if (offset > 31)
 		{
@@ -764,7 +779,7 @@ extern "C"
     #endif
 
 #ifdef LINUX
-    void linuxHandler(union sigval sv)
+    void linux_handler(union sigval sv)
     {
         timer_func_handler_pntr();
     }
@@ -777,7 +792,7 @@ extern "C"
         struct itimerspec its;
 
         sev.sigev_notify = SIGEV_THREAD;
-        sev.sigev_notify_function = linuxHandler;
+        sev.sigev_notify_function = linux_handler;
         sev.sigev_notify_attributes = NULL;
         sev.sigev_value.sival_ptr = &timer;
 
@@ -800,20 +815,27 @@ extern "C"
             return (1);
         }
 
-        // if (CreateTimerQueueTimer(&win_timer, NULL, (WAITORTIMERCALLBACK)timer_sig_handler, NULL, mSec, mSec, WT_EXECUTEINTIMERTHREAD) == 0)
-        // {
-        // 	printf("\nCreateTimerQueueTimer() error\n");
-        // 	return (1);
-        // }
-
         return (0);
-	}
+    }
 #endif
 
 #ifdef WINDOWS
     VOID CALLBACK timer_sig_handler(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
     {
         timer_func_handler_pntr();
+    }
+
+    int start_timer(int mSec, void (*timer_func_handler)(void))
+    {
+        timer_func_handler_pntr = timer_func_handler;
+
+        if (CreateTimerQueueTimer(&win_timer, NULL, (WAITORTIMERCALLBACK)timer_sig_handler, NULL, mSec, mSec, WT_EXECUTEINTIMERTHREAD) == 0)
+        {
+            printf("\nCreateTimerQueueTimer() error\n");
+            return (1);
+        }
+
+        return (0);
     }
 #endif
 
@@ -1203,9 +1225,7 @@ extern "C"
         g_cpu_freq = getCPUFreq();
         pthread_create(&thread_io, NULL, &ioserver, NULL);
 #endif
-#ifdef LINUX
         start_timer(20, &ticksimul);
-#endif
         mcu_enable_global_isr();
 		flash_fs = {
 				.drive = 'C',

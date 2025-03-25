@@ -1061,6 +1061,7 @@ bool cnc_check_interlocking(void)
 	return true;
 }
 
+// @GPILOT
 void protocol_get_rt_pos();
 extern uint8_t io_virtual_inputs;
 
@@ -1069,6 +1070,7 @@ static void cnc_io_dotasks(void)
 	// run internal mcu tasks (USB and communications)
 	mcu_dotasks();
 
+    // @GPILOT
     float axis[3];
     protocol_get_rt_pos(axis);
 
@@ -1088,6 +1090,7 @@ static void cnc_io_dotasks(void)
             io_virtual_inputs |= STEP2_IO_MASK;
         }
     }
+    // probe
     if (axis[2] < -5.000) {
         io_virtual_inputs |= STEP7_IO_MASK;
     }

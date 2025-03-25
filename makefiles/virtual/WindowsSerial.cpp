@@ -1,3 +1,4 @@
+// @GPILOT
 #include <QtCore>
 #include "WindowsSerial.h"
 

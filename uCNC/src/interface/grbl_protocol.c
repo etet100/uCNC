@@ -387,6 +387,7 @@ static FORCEINLINE void proto_status_tail(void)
 	g_planner_state.ovr_counter--;
 }
 
+// @GPILOT
 void protocol_get_rt_pos(float *axis)
 {
     int32_t steppos[AXIS_TO_STEPPERS];
