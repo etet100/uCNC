@@ -23,7 +23,7 @@ win32 {
     DEFINES += WINDOWS=1
 }
 
-unix {
+unix:!macx {
     DEFINES += LINUX=1
 }
 

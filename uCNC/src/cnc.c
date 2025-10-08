@@ -1074,7 +1074,7 @@ static void cnc_io_dotasks(void)
     float axis[3];
     protocol_get_rt_pos(axis);
 
-    io_virtual_inputs = 0;
+    // io_virtual_inputs = 0;
 //    if (cnc_get_exec_state(EXEC_HOMING))
     {
         if (axis[0] < -5.000)

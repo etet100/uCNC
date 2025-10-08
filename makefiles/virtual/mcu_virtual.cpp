@@ -778,7 +778,7 @@ extern "C"
         VOID CALLBACK timer_sig_handler(PVOID, BOOLEAN);
     #endif
 
-#ifdef LINUX
+#ifndef WINDOWS
     void linux_handler(union sigval sv)
     {
         timer_func_handler_pntr();
