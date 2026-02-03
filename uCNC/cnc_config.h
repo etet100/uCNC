@@ -116,7 +116,7 @@ extern "C"
 	 * Disabling settings safety will make the settins run in legacy more where they are simply reset to default on error without forcing the user to re-check them
 	 */
 
-	//	 #define DISABLE_SAFE_SETTINGS
+	//  #define DISABLE_SAFE_SETTINGS
 
 	/**
 	 * Uncomment to enable G92 storing on non volatile memory
@@ -130,7 +130,7 @@ extern "C"
 	 * This is useful if you don't have EEPROM/FLASH storage or the divide read/write maximum cycle count is low to prevent damage
 	 * This is also usefull if the sender provides all settings at startup/connection
 	 * */
-		//  #define RAM_ONLY_SETTINGS
+	//  #define RAM_ONLY_SETTINGS
 
 	/**
 	 * Override default configuration settings. Use _PER_AXIS parameters to
@@ -215,7 +215,30 @@ extern "C"
 #define DELAY_ON_RESUME_COOLANT 1
 // uncomment to make M7 act as M8
 // #define M7_SAME_AS_M8
+
+#if TOOL_COUNT > 1
+/**
+ * Enable this option to active the Automatic Tool Changer hooks
+ * This provides access to 2 hook (for tool unmounting and tool mounting), that allows the creating/of custom modules to be used with an ATC tool
+ * These hooks will only fire if a valid tool is selected.
+ */
+// #define ENABLE_ATC_HOOKS
+#ifdef ENABLE_ATC_HOOKS
+// if an error occurs while executing some ATC gcode file put the machine in alarm mode and stop execution
+#define ALARM_ON_ATC_ERROR
 #endif
+
+#endif
+
+#endif
+
+
+/**
+ * 
+ * Uncomment to enable pwm laser tool features
+ * 
+ * **/
+#define ENABLE_LASER_PWM
 
 /**
  * Uncomment to enable laser PPI feature
@@ -236,10 +259,17 @@ extern "C"
 
 /**
  *
- * Enables Plasma THC capabilities
+ * Uncomment to enable plasma THC features
  *
  * **/
 //  #define ENABLE_PLASMA_THC
+
+/**
+ * 
+ * Uncomment to enable embroidery features
+ * 
+ */
+//  #define ENABLE_EMBROIDERY
 
 /**
  * Feed overrides increments and percentage ranges
@@ -294,7 +324,7 @@ extern "C"
 	 * processes comment as defined in the RS274NGC
 	 * */
 
-// #define PROCESS_COMMENTS
+	// #define PROCESS_COMMENTS
 
 	/**
 	 * Enables RS274NGC canned cycles
@@ -331,6 +361,11 @@ extern "C"
  */
 // #define DISABLE_ENDPROGRAM_LOCK
 
+/**
+ * Allow multiline startup blocks. Multiline startup blocks allow to add a multiple GCode command blocks using the | char as a separator
+ */
+//  #define ENABLE_MULTILINE_STARTUP_BLOCKS
+
 	/**
 	 * Shrink µCNC
 	 * It's possible to shrink µCNC by disable some core features:
@@ -348,9 +383,9 @@ extern "C"
 	// #define DISABLE_PATH_MODES
 
 	/**
-	 * enable step counting on sync motion command (needed for some Gcode extensions like G33)
+	 * Enable hooks that run on the step generation ISR and allow to modify the steps mask and direction in realtime (needed for some Gcode extensions like G33)
 	 * */
-	// #define ENABLE_RT_SYNC_MOTIONS
+	//  #define ENABLE_RT_SYNC_MOTIONS
 
 	/**
 	 * enable motion control and planner highjacking
@@ -366,6 +401,7 @@ extern "C"
 	// #define ENABLE_IO_MODULES
 	// #define ENABLE_PARSER_MODULES
 	// #define ENABLE_MOTION_CONTROL_MODULES
+	// #define ENABLE_PLANNER_MODULES
 
 	/**
 	 * Settings extensions are enabled by default
@@ -373,6 +409,13 @@ extern "C"
 	 * Some option might override this (like ENABLE_TOOL_PID_CONTROLLER)
 	 * */
 // #define DISABLE_SETTINGS_MODULES
+
+	/**
+	 * Allow to set continuous settings as an array
+	 * For example set steps per mm with one command
+	 * $100=200.0,200.0,80.0
+	 * */
+//  #define ALLOW_SETTINGS_ARRAY_FORMAT
 
 /**
  * Report specific options
@@ -427,10 +470,13 @@ extern "C"
 
 // #define MODIFY_SOFT_LIMIT_TO_ERROR
 #ifdef MODIFY_SOFT_LIMIT_TO_ERROR
-// uncomment this to allow motion to continue
-// otherwise it will put the machine in hold until the user allows it to continue
-// #define ALLOW_MOTION_TO_CONTINUE
+// uncomment this to ignore the target and to continue if doing a jog motion
+// otherwise it will put the machine in hold (canceling the jog motion) until the user allows the code to continue to execute
+// #define IGNORE_JOG_TARGET_SOFT_LIMIT_ERROR
 #endif
+// uncomment to allow jog motions that travels beyond software limits to be clamped and continue to execute without alarm or error
+// #define ALLOW_SOFT_LIMIT_JOG_MOTION_CLAMPING
+
 
 	/**
 	 * If the type of machine supports skew and needs skew correction
@@ -467,6 +513,8 @@ extern "C"
 // this sets the size of the Hmap -> H_MAPING_GRID_FACTOR ^ 2
 // the minimum value is 2 (4 points) and the maximum is 6 (36 points)
 #define H_MAPING_GRID_FACTOR 3
+// uncomment to enable storing HMap settings $215-255
+// #define H_MAPPING_EEPROM_STORE_ENABLED
 #endif
 
 	/**
@@ -486,17 +534,6 @@ extern "C"
 	 * */
 
 	// #define ENABLE_BACKLASH_COMPENSATION
-
-	/**
-	 * Uncomment these to enable step ISR calculation strategies (uses more
-	 * memory) STEP_ISR_SKIP_MAIN - carries the information about the main
-	 * stepper (performs a step in every ISR tick) and skips calculations
-	 * STEP_ISR_SKIP_IDLE - carries the information about the idle steppers
-	 * (performs 0 steps in the ISR tick) and skips calculations
-	 * */
-
-#define STEP_ISR_SKIP_MAIN
-#define STEP_ISR_SKIP_IDLE
 
 	/**
 	 * Sets the maximum number of step doubling loops carried by the DSS (Dynamic
@@ -563,7 +600,7 @@ extern "C"
 #define CTRL_SCHED_CHECK 4
 
 	/**
-	 * EXPERIMENTAL! Uncomment to enable itp step generation to run inside the RTC ISR/task.
+	 * Uncomment to enable itp step generation to run inside the RTC ISR/task.
 	 * This ensures ITP starving prevention. Usually this will be executed at the same sample
 	 * rate as the interpolator with an upper bound of 1Khz and a lower bound of 3Hz
 	 * */
@@ -611,9 +648,10 @@ extern "C"
 	 * 0 - disables
 	 * 1 - partially emulates the startup message and prints unused settings to improve compatibility
 	 * 2 - full emulation of the grbl startup and info messages (this also makes command $IE available to print the firmware information in extended format)
+	 * 3 - **New** drops ESTOP behaviour µCNC shutdown locking for a more similar Grbl behavior
 	 * */
 
-#define EMULATE_GRBL_STARTUP 1
+#define EMULATE_GRBL_STARTUP 2
 
 	/**
 	 *

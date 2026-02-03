@@ -36,6 +36,7 @@ extern "C"
 #define BOARD_MKS_GEN_L_V1 6
 #define BOARD_UNO_SHIELD_V3 7
 #define BOARD_MELZI_V1_14 8
+#define BOARD_MEGA_SHIELD_V3_H 9
 #define BOARD_RAMPS14_MIRROR 200
 /**
  * STM32F0
@@ -53,6 +54,7 @@ extern "C"
 #define BOARD_MKS_ROBIN_NANO_V3_1 1101
 #define BOARD_SKR_PRO_V1_2 1103
 #define BOARD_NUCLEO_F411RE_SHIELD_V3 1104
+#define BOARD_FYSETC_CHEETAH_V2 1105
 /**
  * SAMD21
  */
@@ -75,6 +77,14 @@ extern "C"
 #define BOARD_MKS_TINYBEE 5001
 #define BOARD_MKS_DLC32 5002
 #define BOARD_ESP32_SHIELD_V3 5003
+/**
+ * ESP32C3
+ */
+#define BOARD_ESP32C3_CORE 5100
+/**
+ * ESP32S3
+ */
+#define BOARD_ESP32S3_DEVKIT 5200
 /**
  * RP2040
  */
@@ -114,6 +124,8 @@ extern "C"
 #define BOARDMAP "avr/boardmap_mks_gen_l_v1.h"
 #elif (BOARD == BOARD_UNO_SHIELD_V3)
 #define BOARDMAP "avr/boardmap_uno_shield_v3.h"
+#elif (BOARD == BOARD_MEGA_SHIELD_V3_H)
+#define BOARDMAP "avr/boardmap_mega_shield_v3.h"
 // STM32F0
 #elif (BOARD == BOARD_BLUEPILL_F0)
 #define BOARDMAP "stm32/boardmap_bluepill_f0.h"
@@ -157,6 +169,12 @@ extern "C"
 #define BOARDMAP "esp32/boardmap_mks_tinybee.h"
 #elif (BOARD == BOARD_ESP32_SHIELD_V3)
 #define BOARDMAP "esp32/boardmap_esp32_shield_v3.h"
+// ESP32-Cx
+#elif (BOARD == BOARD_ESP32C3_CORE)
+#define BOARDMAP "esp32/boardmap_core_c3.h"
+// ESP32-Sx
+#elif (BOARD == BOARD_ESP32S3_DEVKIT)
+#define BOARDMAP "esp32/boardmap_devkit_s3.h"
 // RP2040
 #elif (BOARD == BOARD_RPI_PICO)
 #define BOARDMAP "rp2040/boardmap_rpi_pico.h"

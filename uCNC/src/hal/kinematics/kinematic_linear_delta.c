@@ -151,7 +151,6 @@ uint8_t kinematics_home(void)
 		return error;
 	}
 
-
 #if AXIS_A_HOMING_MASK != 0
 	error = mc_home_axis(AXIS_A_HOMING_MASK, LINACT3_LIMIT_MASK);
 	if (error != STATUS_OK)
@@ -215,25 +214,58 @@ bool kinematics_check_boundaries(float *axis)
 
 	if (axis[AXIS_X] < -delta_base_max_travel || axis[AXIS_X] > delta_base_max_travel)
 	{
+#ifdef ALLOW_SOFT_LIMIT_JOG_MOTION_CLAMPING
+		axis[AXIS_X] = CLAMP(-delta_base_max_travel, axis[AXIS_X], delta_base_max_travel);
+#endif
 		return false;
 	}
 
 	if (axis[AXIS_Y] < -delta_base_max_travel || axis[AXIS_Y] > delta_base_max_travel)
 	{
+#ifdef ALLOW_SOFT_LIMIT_JOG_MOTION_CLAMPING
+		axis[AXIS_Y] = CLAMP(-delta_base_max_travel, axis[AXIS_Y], delta_base_max_travel);
+#endif
 		return false;
 	}
 
 #ifdef SET_ORIGIN_AT_HOME_POS
 	if (axis[AXIS_Z] < -g_settings.max_distance[AXIS_Z] || axis[AXIS_Z] > 0)
 	{
+#ifdef ALLOW_SOFT_LIMIT_JOG_MOTION_CLAMPING
+		axis[AXIS_Z] = CLAMP(-g_settings.max_distance[AXIS_Z], axis[AXIS_Z], 0);
+#endif
 		return false;
 	}
 #else
 	if (axis[AXIS_Z] > g_settings.max_distance[AXIS_Z] || axis[AXIS_Z] < 0)
 	{
+#ifdef ALLOW_SOFT_LIMIT_JOG_MOTION_CLAMPING
+		axis[AXIS_Z] = CLAMP(0, axis[AXIS_Z], g_settings.max_distance[AXIS_Z]);
+#endif
 		return false;
 	}
 #endif
+
+	// remaining axis
+	for (uint8_t i = AXIS_COUNT; i != 3;)
+	{
+		i--;
+		if (g_settings.max_distance[i]) // ignore any undefined axis
+		{
+#ifdef SET_ORIGIN_AT_HOME_POS
+			float value = !(g_settings.homing_dir_invert_mask & (1 << i)) ? axis[i] : -axis[i];
+#else
+			float value = axis[i];
+#endif
+			if (value > g_settings.max_distance[i] || value < 0)
+			{
+#ifdef ALLOW_SOFT_LIMIT_JOG_MOTION_CLAMPING
+				axis[i] = CLAMP(0, value, g_settings.max_distance[i]);
+#endif
+				return false;
+			}
+		}
+	}
 
 	return true;
 }
