@@ -19,6 +19,9 @@ CONFIG -= debug_and_release
 LIBS += -pthread
 #DEFINES += WIN_INTERFACE=0
 
+QMAKE_CFLAGS += -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -Wno-missing-field-initializers
+QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -Wno-missing-field-initializers
+
 win32 {
     DEFINES += WINDOWS=1
 }

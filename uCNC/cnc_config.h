@@ -43,6 +43,8 @@ extern "C"
 // #define ENABLE_BLUETOOTH
 #endif
 
+#define DISABLE_MULTISTREAM_SERIAL
+
 	/**
 	 * Choose the board
 	 * Select the boardmap for your board.

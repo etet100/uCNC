@@ -1062,7 +1062,7 @@ bool cnc_check_interlocking(void)
 }
 
 // @GPILOT
-void protocol_get_rt_pos();
+void protocol_get_rt_pos(float *axis);
 extern uint8_t io_virtual_inputs;
 
 static void cnc_io_dotasks(void)
