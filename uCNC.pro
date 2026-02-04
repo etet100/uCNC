@@ -37,6 +37,7 @@ HEADERS += \
     uCNC/cnc_config.h \
     uCNC/cnc_hal_config.h \
     uCNC/cnc_hal_overrides.h \
+    uCNC/src/buffer.h \
     uCNC/src/cnc.h \
     uCNC/src/cnc_build.h \
     uCNC/src/cnc_hal_config_helper.h \
@@ -94,6 +95,7 @@ HEADERS += \
 SOURCES += \
     makefiles/virtual/WindowsSerial.cpp \
     makefiles/virtual/mcu_virtual.cpp \
+    uCNC/src/buffer.c \
     uCNC/src/cnc.c \
     uCNC/src/core/interpolator.c \
     uCNC/src/core/io_control.c \
@@ -132,8 +134,7 @@ SOURCES += \
     uCNC/src/modules/softi2c.c \
     uCNC/src/modules/softspi.c \
     uCNC/src/modules/softuart.c \
-    uCNC/src/modules/system_menu.c \
-    uCNC/src/utils.c
+    uCNC/src/modules/system_menu.c
 
 DISTFILES += \
     uCNC/README.md \

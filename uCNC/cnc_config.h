@@ -234,9 +234,9 @@ extern "C"
 
 
 /**
- * 
+ *
  * Uncomment to enable pwm laser tool features
- * 
+ *
  * **/
 #define ENABLE_LASER_PWM
 
@@ -265,9 +265,9 @@ extern "C"
 //  #define ENABLE_PLASMA_THC
 
 /**
- * 
+ *
  * Uncomment to enable embroidery features
- * 
+ *
  */
 //  #define ENABLE_EMBROIDERY
 
@@ -475,7 +475,7 @@ extern "C"
 // #define IGNORE_JOG_TARGET_SOFT_LIMIT_ERROR
 #endif
 // uncomment to allow jog motions that travels beyond software limits to be clamped and continue to execute without alarm or error
-// #define ALLOW_SOFT_LIMIT_JOG_MOTION_CLAMPING
+#define ALLOW_SOFT_LIMIT_JOG_MOTION_CLAMPING
 
 
 	/**

@@ -31,8 +31,9 @@ class WindowsSerial
         //Connection status
         bool connected;
         //Keep track of last error
-        DWORD errors;        
-        QLocalSocket *socket;
+        DWORD errors;
+        QLocalSocket *socket = nullptr;
+        QLocalSocket *controlSocket = nullptr;
 
     public:
         //Initialize Serial communication with the given COM port
