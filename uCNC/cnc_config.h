@@ -651,7 +651,7 @@ extern "C"
 	 * 3 - **New** drops ESTOP behaviour µCNC shutdown locking for a more similar Grbl behavior
 	 * */
 
-#define EMULATE_GRBL_STARTUP 2
+#define EMULATE_GRBL_STARTUP 3
 
 	/**
 	 *
