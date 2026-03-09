@@ -6,9 +6,9 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 extern "C" {
-    static void gpilotLockProbeAtCurrentPosition(void);
-    static void gpilotResetProbePosition(void);
-    static void gpilotSetHome(bool abs, double x, double y, double z);
+    void gpilotLockProbeAtCurrentPosition(void);
+    void gpilotResetProbePosition(void);
+    void gpilotSetHome(bool abs, double x, double y, double z);
 }
 
 WindowsSerial::WindowsSerial(const char *portName)

@@ -177,7 +177,7 @@ extern "C"
 		uint32_t now = mcu_free_micros();
 		for (;;)
 		{
-			ATOMIC_TYPE expected = BIN_SEMPH_UNLOCKED;
+			uint8_t expected = BIN_SEMPH_UNLOCKED;
 			if (ATOMIC_COMPARE_EXCHANGE_N(lock, &expected, BIN_SEMPH_LOCKED, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE))
 			{
 				return true;
