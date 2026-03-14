@@ -293,6 +293,7 @@
 #define CS_RES 113
 #define DIO113 113
 #define DIN0 130
+#define DIN0_ISR
 #define DIO130 130
 #define DIN1 131
 #define DIO131 131
@@ -436,6 +437,15 @@
 #define DIO210 210
 #define RX2 211
 #define DIO211 211
+
+#define DIN0_ISR
+#define DIN1_ISR
+#define DIN2_ISR
+#define DIN3_ISR
+#define DIN4_ISR
+#define DIN5_ISR
+#define DIN6_ISR
+#define DIN7_ISR
 
 #define MCU_HAS_ONESHOT_TIMER
 

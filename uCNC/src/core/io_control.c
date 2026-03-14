@@ -24,6 +24,7 @@
 static uint8_t io_lock_limits_mask;
 #endif
 static uint8_t io_invert_limits_mask;
+static bool io_limits_disabled;
 
 // @GPILOT
 uint8_t gpilotVirtualInputs;
@@ -98,6 +99,12 @@ MCU_IO_CALLBACK void mcu_limits_changed_cb(void)
 #ifdef DISABLE_ALL_LIMITS
 	return;
 #else
+
+	if (io_limits_disabled)
+	{
+		return;
+	}
+
 	static volatile uint8_t prev_limits = 0;
 	uint8_t limits = io_get_limits();
 	uint8_t limits_diff = prev_limits;
@@ -141,7 +148,7 @@ MCU_IO_CALLBACK void mcu_limits_changed_cb(void)
 
 			itp_lock_stepper(0); // unlocks axis
 #endif
-			itp_stop();
+			cnc_stop(false);
 			cnc_set_exec_state(EXEC_LIMITS);
 #ifdef ENABLE_IO_ALARM_DEBUG
 			io_alarm_limits = limits;
@@ -173,14 +180,19 @@ MCU_IO_CALLBACK void mcu_controls_changed_cb(void)
 #if ASSERT_PIN(ESTOP)
 #if EMULATE_GRBL_STARTUP > 2
 	if (CHECKFLAG((controls & changed), ESTOP_MASK))
+	{
+#ifdef ENABLE_IO_ALARM_DEBUG
+		io_alarm_controls = controls;
+#endif
+		cnc_call_rt_command(CMD_CODE_RESET);
 #else
 	if (CHECKFLAG(controls, ESTOP_MASK))
-#endif
 	{
 #ifdef ENABLE_IO_ALARM_DEBUG
 		io_alarm_controls = controls;
 #endif
 		cnc_alarm(EXEC_ALARM_EMERGENCY_STOP);
+#endif
 		return; // forces exit
 	}
 #endif
@@ -330,13 +342,22 @@ void io_lock_limits(uint8_t limitmask)
 }
 #endif
 
+void io_enable_limits(void)
+{
+	io_limits_disabled = false;
+}
+void io_disable_limits(void)
+{
+	io_limits_disabled = true;
+}
+
 void io_invert_limits(uint8_t limitmask)
 {
 	io_invert_limits_mask = limitmask;
 	mcu_limits_changed_cb();
 }
 
-uint8_t io_get_limits(void)
+uint8_t io_get_raw_limits(void)
 {
 #ifdef DISABLE_ALL_LIMITS
 	return 0;
@@ -380,11 +401,6 @@ uint8_t io_get_limits(void)
 
 	uint8_t result = (gpilotVirtualInputs & 0b111);
 
-	if (cnc_get_exec_state(EXEC_HOMING))
-	{
-		result ^= io_invert_limits_mask;
-	}
-
 #if (LIMITS_NORMAL_OPERATION_MASK != 0)
 	if (!cnc_get_exec_state(EXEC_HOMING))
 	{
@@ -393,6 +409,12 @@ uint8_t io_get_limits(void)
 #endif
 
 	return result;
+}
+
+uint8_t io_get_limits(void)
+{
+	uint8_t result = io_get_raw_limits();
+	return ((!cnc_get_exec_state(EXEC_HOMING)) ? (result) : (result ^ io_invert_limits_mask));
 }
 
 uint8_t io_get_controls(void)

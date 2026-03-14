@@ -206,10 +206,11 @@ void mcu_init(void)
 	timer_set_alarm(ITP_TIMER_TG, ITP_TIMER_IDX, TIMER_ALARM_EN);
 	timer_isr_register(ITP_TIMER_TG, ITP_TIMER_IDX, mcu_itp_isr, NULL, ESP_INTR_FLAG_IRAM, NULL);
 	timer_enable_intr(ITP_TIMER_TG, ITP_TIMER_IDX);
-	timer_start(ITP_TIMER_TG, ITP_TIMER_IDX);
 
 #ifdef IC74HC595_CUSTOM_SHIFT_IO
 	mcu_i2s_extender_init();
+#else
+	timer_start(ITP_TIMER_TG, ITP_TIMER_IDX);
 #endif
 
 	// initialize rtc timer (currently on core 1)
@@ -430,6 +431,9 @@ void mcu_dotasks(void)
 
 #ifdef MCU_HAS_ONESHOT_TIMER
 
+uint32_t esp32_oneshot_counter;
+uint32_t esp32_oneshot_reload;
+
 MCU_CALLBACK void mcu_oneshot_isr(void *arg)
 {
 	timer_pause(ONESHOT_TIMER_TG, ONESHOT_TIMER_IDX);
@@ -484,6 +488,25 @@ MCU_CALLBACK void mcu_start_timeout()
 #endif
 }
 #endif
+
+// software generated oneshot for RT steps like laser PPI
+#if defined(MCU_HAS_ONESHOT_TIMER) && defined(ENABLE_RT_SYNC_MOTIONS)
+MCU_CALLBACK void mcu_gen_oneshot(void)
+{
+	if (esp32_oneshot_counter)
+	{
+		esp32_oneshot_counter--;
+		if (!esp32_oneshot_counter)
+		{
+			if (mcu_timeout_cb)
+			{
+				mcu_timeout_cb();
+			}
+		}
+	}
+}
+#endif
+
 #endif
 
 /*IO functions*/

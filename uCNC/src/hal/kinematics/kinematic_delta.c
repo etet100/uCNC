@@ -367,26 +367,18 @@ uint8_t kinematics_home(void)
 	}
 #endif
 
-	cnc_unlock(true);
+#ifndef ENABLE_GRBL_STYLE_HOMING
+	if (!mc_home_motion_pulloff((1 << AXIS_Z), true))
+	{
+		return STATUS_CRITICAL_FAIL;
+	}
+#endif
+
 	float target[AXIS_COUNT];
-	motion_data_t block_data = {0};
-
-	int32_t angle_steps[AXIS_COUNT];
-	delta_home_angle_to_steps(angle_steps);
-	kinematics_apply_forward(angle_steps, target);
-	// sync systems (interpolator, motion control and parser - the latest is synched ny motion control)
-	itp_reset_rt_position(target);
+	// sync systems again to the origin (interpolator, motion control and parser - the latest is synched ny motion control)
+	memset(target, 0, sizeof(target));
 	mc_sync_position();
-
-	// pull of only on the Z axis
-	target[AXIS_Z] += ((g_settings.homing_dir_invert_mask & (1 << AXIS_Z)) ? -g_settings.homing_offset : g_settings.homing_offset);
-
-	block_data.feed = g_settings.homing_fast_feed_rate;
-	block_data.spindle = 0;
-	block_data.dwell = 0;
-	// starts offset and waits to finnish
-	error = mc_line(target, &block_data);
-	itp_sync();
+	mc_get_position(target);
 
 // add the internal offset to the kinematics
 #ifdef SET_ORIGIN_AT_HOME_POS

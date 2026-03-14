@@ -320,7 +320,6 @@ WEAK_EVENT_HANDLER(proto_status)
 	{
 		if (ptr->fptr != NULL)
 		{
-			proto_putc('|');
 			ptr->fptr(args);
 		}
 		ptr = ptr->next;
@@ -422,7 +421,7 @@ void proto_status(void)
 	uint16_t spindle = 0;
 #endif
 	uint8_t controls = io_get_controls();
-	uint8_t limits = io_get_limits();
+	uint8_t limits = io_get_raw_limits();
 	bool probe = io_get_probe();
 	uint8_t state = cnc_get_exec_state(0xFF);
 	uint8_t filter = 0x80;
@@ -474,7 +473,7 @@ void proto_status(void)
 			}
 			break;
 #endif
-		case EXEC_UNHOMED:
+		case EXEC_POSITION_MAYBE_LOST:
 		case EXEC_LIMITS:
 			if (!cnc_get_exec_state(EXEC_HOMING))
 			{
