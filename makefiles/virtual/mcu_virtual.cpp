@@ -784,6 +784,7 @@ extern "C"
 		unsigned long perf_start;
 		double cyclesPerMicrosecond;
 		double cyclesPerMillisecond;
+		uint64_t tickcount;
 
 		volatile unsigned long g_cpu_freq = 0;
 
@@ -926,28 +927,18 @@ extern "C"
 
 	uint32_t mcu_micros(void)
 	{
-		#ifdef WINDOWS
-			LARGE_INTEGER perf_counter;
-			QueryPerformanceCounter(&perf_counter);
-			return (uint32_t)(perf_counter.QuadPart / cyclesPerMicrosecond);
-		#else
-			struct timespec spec;
-			clock_gettime(CLOCK_MONOTONIC, &spec);
-			return (uint32_t)(spec.tv_sec * 1000000 + spec.tv_nsec / 1000);
-		#endif
+		// LARGE_INTEGER perf_counter;
+		// QueryPerformanceCounter(&perf_counter);
+		// return (uint32_t)(perf_counter.QuadPart / cyclesPerMicrosecond);
+		return (uint32_t)tickcount;
 	}
 
 	uint32_t mcu_millis(void)
 	{
-		#ifdef WINDOWS
-			LARGE_INTEGER perf_counter;
-			QueryPerformanceCounter(&perf_counter);
-			return (uint32_t)(perf_counter.QuadPart / cyclesPerMillisecond);
-		#else
-			struct timespec spec;
-			clock_gettime(CLOCK_MONOTONIC, &spec);
-			return (uint32_t)(spec.tv_sec * 1000 + spec.tv_nsec / 1000000);
-		#endif
+		// LARGE_INTEGER perf_counter;
+		// QueryPerformanceCounter(&perf_counter);
+		// return (uint32_t)(perf_counter.QuadPart / cyclesPerMillisecond);
+		return (uint32_t)(tickcount / 1000);
 	}
 
 	/**
@@ -986,7 +977,7 @@ extern "C"
 		{
 			parcial += (1000000.0f / (float)ITP_SAMPLE_RATE);
 			uint32_t partial_int = (uint32_t)parcial;
-			// tickcount += (int)parcial;
+			tickcount += (int)parcial;
 			parcial -= (int)parcial;
 
 			mcu_gen_step(partial_int);
@@ -1029,11 +1020,11 @@ extern "C"
 				// printpin(DOUT1);
 			}
 
-			// if (tickcount > next_rtc)
-			// {
-			//     mcu_rtc_cb(mcu_millis());
-			//     next_rtc += 1000;
-			// }
+			if (tickcount > next_rtc)
+			{
+				mcu_rtc_cb(mcu_millis());
+				next_rtc += 1000;
+			}
 		}
 
 		//		startCycleCounter();
@@ -1335,7 +1326,6 @@ extern "C"
 		for (;;)
 		{
 			cnc_run();
-
 		}
 	}
 
