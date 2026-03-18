@@ -598,7 +598,7 @@ extern "C"
 	 * interrupts)
 	 * */
 
-	// #define FORCE_SOFT_POLLING
+	#define FORCE_SOFT_POLLING
 
 	/**
 	 * Uncomment to enable itp step generation to run inside the RTC ISR/task.

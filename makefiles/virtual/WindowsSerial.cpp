@@ -9,6 +9,8 @@ extern "C" {
     void gpilotLockProbeAtCurrentPosition(void);
     void gpilotResetProbePosition(void);
     void gpilotSetHome(bool abs, double x, double y, double z);
+    void gpilotSetSingleLimit(int axis, double pos);
+    void gpilotEstop();
 }
 
 WindowsSerial::WindowsSerial(const char *portName)
@@ -69,7 +71,7 @@ int WindowsSerial::ReadData(char *buffer, unsigned int nbChar)
             QString line = ctrlBuffer.left(pos).trimmed();
             ctrlBuffer = ctrlBuffer.mid(pos + 1);
 
-            qDebug() << "[WindowsSerial][Ctrl] Received:" << line;
+            qDebug() << "[uCNC] Received:" << line;
 
             // Process control commands here
             QJsonDocument doc = QJsonDocument::fromJson(line.toUtf8());
@@ -88,6 +90,14 @@ int WindowsSerial::ReadData(char *buffer, unsigned int nbChar)
                         obj["y"].toDouble(),
                         obj["z"].toDouble()
                     );
+                } else if (cmd == "set_single_limit") {
+                    //{\"axis\":2,\"cmd\":\"set_single_limit\",\"pos\":25}"
+                    gpilotSetSingleLimit(
+                        obj["axis"].toInt(),
+                        obj["pos"].toDouble()
+                    );
+                } else if (cmd == "estop") {
+                    gpilotEstop();
                 }
             }
         }
