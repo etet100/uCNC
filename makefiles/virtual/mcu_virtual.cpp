@@ -27,6 +27,11 @@
 #endif
 
 #ifdef __cplusplus
+#include <QtCore>
+static QAtomicInt* gpilotStopFlag = nullptr;
+#endif
+
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -249,6 +254,10 @@ extern "C"
 #ifdef MCU_HAS_UART2
 		mcu_uart2_process();
 #endif
+
+		if (gpilotStopFlag && gpilotStopFlag->loadAcquire() == 2) {
+			cnc_call_rt_command(CMD_CODE_RESET);
+		}
 	}
 
 	/**
@@ -1316,18 +1325,30 @@ extern "C"
 		fs_mount(&flash_fs);
 	}
 
-	#include <QtCore>
 
-	Q_DECL_EXPORT
-	void uCNC(QString socketName)
-	{
-		Serial.connect(socketName);
-		cnc_init();
-		for (;;)
-		{
-			cnc_run();
-		}
-	}
+    Q_DECL_EXPORT
+    void uCNC(QString socketName, QAtomicInt* stopFlag)
+    {
+        gpilotStopFlag = stopFlag;
+        Serial.connect(socketName);
+        cnc_init();
+        for (;;)
+        {
+            cnc_run();
+            if (stopFlag->loadAcquire() == 2) {
+                break;
+            }
+        }
+
+        // Stop the timer and IO thread before returning so that FreeLibrary
+        // can safely unload the DLL. Without this, the timer callback and IO
+        // thread keep executing DLL code after the library is unloaded,
+        // causing a crash.
+        stop_timer();
+#ifdef WINDOWS
+        pthread_join(thread_io, NULL);
+#endif
+    }
 
 	uint8_t itp_set_step_mode(uint8_t mode) { return 0; }
 

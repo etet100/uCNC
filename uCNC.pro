@@ -144,3 +144,4 @@ DISTFILES += \
     uCNC/src/hal/tools/tools/README.md \
     uCNC/src/modules/system_menu.md
 
+DESTDIR = $$OUT_PWD/../../gpilot
