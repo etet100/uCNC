@@ -85,6 +85,38 @@ extern "C"
 		return global_isr_enabled;
 	}
 
+	// On real MCUs ISR routines (stepper, RTC tick) cannot be preempted by
+	// main-loop code that mutates interpolator/planner state. On this virtual
+	// MCU the timer callback runs on a separate Windows timer-pool thread, so
+	// ticksimul() dispatches itp_run()/step ISR concurrently with main-thread
+	// code that touches shared state (itp_clear, planner_clear,
+	// planner_discard_block, probe cleanup). This recursive mutex mirrors the
+	// "interrupts off" semantics across both threads.
+	static CRITICAL_SECTION g_isr_cs;
+	static INIT_ONCE g_isr_cs_once = INIT_ONCE_STATIC_INIT;
+
+	static BOOL CALLBACK virtual_mcu_isr_cs_init(PINIT_ONCE, PVOID, PVOID *)
+	{
+		InitializeCriticalSection(&g_isr_cs);
+		return TRUE;
+	}
+
+	static inline void virtual_mcu_isr_cs_ensure(void)
+	{
+		InitOnceExecuteOnce(&g_isr_cs_once, virtual_mcu_isr_cs_init, NULL, NULL);
+	}
+
+	void virtual_mcu_isr_lock(void)
+	{
+		virtual_mcu_isr_cs_ensure();
+		EnterCriticalSection(&g_isr_cs);
+	}
+
+	void virtual_mcu_isr_unlock(void)
+	{
+		LeaveCriticalSection(&g_isr_cs);
+	}
+
 	void qt_loop()
 	{
 		QCoreApplication::processEvents();
@@ -977,6 +1009,11 @@ extern "C"
 			return;
 		}
 
+		// Serialize with any main-thread code that mutates interpolator/planner
+		// state. Held for the whole tick window so stepper ISR, oneshot and RTC
+		// callbacks all observe a consistent view.
+		virtual_mcu_isr_lock();
+
 		static uint32_t prev_special, prev, next_rtc = 1000;
 		float parcial = 0;
 		//		long t = stopCycleCounter();
@@ -1035,6 +1072,8 @@ extern "C"
 				next_rtc += 1000;
 			}
 		}
+
+		virtual_mcu_isr_unlock();
 
 		//		startCycleCounter();
 		__atomic_store_n(&running, false, __ATOMIC_RELAXED);

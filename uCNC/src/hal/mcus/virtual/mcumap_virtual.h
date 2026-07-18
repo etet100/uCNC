@@ -493,6 +493,24 @@ extern const tool_t vfd_pwm;
 #define ATOMIC_FETCH_XOR(dst, val, mode) __atomic_fetch_xor((dst), (val), mode)
 #define ATOMIC_SPIN()
 
+// Windows-timer-thread / main-thread serialization for shared interpolator
+// and planner state. On a real MCU the equivalent is simply "interrupts off",
+// but on the virtual MCU ticksimul() runs on a Windows timer-pool thread and
+// can race with main-loop mutators (itp_clear, planner_clear, probe cleanup).
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void virtual_mcu_isr_lock(void);
+extern void virtual_mcu_isr_unlock(void);
+#ifdef __cplusplus
+}
+#endif
+static inline void __virtual_mcu_isr_cs_release(int *x) { (void)x; virtual_mcu_isr_unlock(); }
+// Cleanup-attribute form so that `return`/`break` inside the block still
+// releases the mutex. Relies on the GCC/Clang toolchain used for this target.
+#define VIRTUAL_MCU_ISR_CRITICAL \
+	for (int __vm_cs __attribute__((cleanup(__virtual_mcu_isr_cs_release))) = (virtual_mcu_isr_lock(), 1); __vm_cs; __vm_cs = 0)
+
 #define asm __asm__
 
 #endif
