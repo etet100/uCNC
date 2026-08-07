@@ -483,6 +483,12 @@ extern const tool_t vfd_pwm;
 
 #define EMULATION_MS_TICK 100
 
+// __atomic_compare_exchange_n() wants a non-volatile "expected" pointer. The
+// default volatile ATOMIC_TYPE makes that a hard error when cnc.h is pulled
+// into a C++ translation unit such as mcu_virtual.cpp. DECL_MUTEX adds its own
+// volatile, so dropping it here changes nothing for the mutex users.
+#define ATOMIC_TYPE uint8_t
+
 #define ATOMIC_LOAD_N(src, mode) __atomic_load_n((src), mode)
 #define ATOMIC_STORE_N(dst, val, mode) __atomic_store_n((dst), (val), mode)
 #define ATOMIC_COMPARE_EXCHANGE_N(dst, cmp, des, sucmode, failmode) __atomic_compare_exchange_n((dst), (cmp), (des), false, sucmode, failmode)
@@ -493,23 +499,10 @@ extern const tool_t vfd_pwm;
 #define ATOMIC_FETCH_XOR(dst, val, mode) __atomic_fetch_xor((dst), (val), mode)
 #define ATOMIC_SPIN()
 
-// Windows-timer-thread / main-thread serialization for shared interpolator
-// and planner state. On a real MCU the equivalent is simply "interrupts off",
-// but on the virtual MCU ticksimul() runs on a Windows timer-pool thread and
-// can race with main-loop mutators (itp_clear, planner_clear, probe cleanup).
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern void virtual_mcu_isr_lock(void);
-extern void virtual_mcu_isr_unlock(void);
-#ifdef __cplusplus
-}
-#endif
-static inline void __virtual_mcu_isr_cs_release(int *x) { (void)x; virtual_mcu_isr_unlock(); }
-// Cleanup-attribute form so that `return`/`break` inside the block still
-// releases the mutex. Relies on the GCC/Clang toolchain used for this target.
-#define VIRTUAL_MCU_ISR_CRITICAL \
-	for (int __vm_cs __attribute__((cleanup(__virtual_mcu_isr_cs_release))) = (virtual_mcu_isr_lock(), 1); __vm_cs; __vm_cs = 0)
+// The emulated step/RTC tick used to run on a Windows timer-pool thread, which
+// raced with main-loop code that mutates interpolator and planner state. It now
+// runs from mcu_dotasks() on the main loop thread instead, so no locking is
+// needed and the core sources stay unpatched. See ticksimul() in mcu_virtual.cpp.
 
 #define asm __asm__
 

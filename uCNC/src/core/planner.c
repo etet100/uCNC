@@ -231,37 +231,34 @@ static void planner_add_block(void)
 // it's safe without atomic because this only runs in the main loop after the step ISR is stopped so it should be OK
 void planner_discard_block(void)
 {
-	VIRTUAL_MCU_ISR_CRITICAL
+	uint8_t blocks = planner_data_blocks;
+	if (!blocks)
 	{
-		uint8_t blocks = planner_data_blocks;
-		if (!blocks)
-		{
-			return;
-		}
+		return;
+	}
 
-		uint8_t index = planner_data_read;
-		uint8_t prev_index = index;
+	uint8_t index = planner_data_read;
+	uint8_t prev_index = index;
 
-		if (++index == PLANNER_BUFFER_SIZE)
-		{
-			index = 0;
-		}
+	if (++index == PLANNER_BUFFER_SIZE)
+	{
+		index = 0;
+	}
 
-		// syncs blocks feedrates
-		planner_data[index].entry_feed_sqr = planner_data[prev_index].entry_feed_sqr;
+	// syncs blocks feedrates
+	planner_data[index].entry_feed_sqr = planner_data[prev_index].entry_feed_sqr;
 
-		blocks--;
+	blocks--;
 #if TOOL_COUNT > 0
-		if (blocks)
-		{
-			g_planner_state.spindle_speed = planner_data[index].spindle;
-			g_planner_state.state_flags.reg = planner_data[index].planner_flags.reg;
-		}
+	if (blocks)
+	{
+		g_planner_state.spindle_speed = planner_data[index].spindle;
+		g_planner_state.state_flags.reg = planner_data[index].planner_flags.reg;
+	}
 #endif
 
-		planner_data_blocks = blocks;
-		planner_data_read = index;
-	}
+	planner_data_blocks = blocks;
+	planner_data_read = index;
 }
 
 static uint8_t planner_buffer_next(uint8_t index)
@@ -322,15 +319,12 @@ void planner_init(void)
 
 void planner_clear(void)
 {
-	VIRTUAL_MCU_ISR_CRITICAL
-	{
-		// clears all motions stored in the buffer
-		planner_buffer_clear();
+	// clears all motions stored in the buffer
+	planner_buffer_clear();
 #if TOOL_COUNT > 0
-		g_planner_state.spindle_speed = 0;
-		g_planner_state.state_flags.reg = 0;
+	g_planner_state.spindle_speed = 0;
+	g_planner_state.state_flags.reg = 0;
 #endif
-	}
 }
 
 planner_block_t *planner_get_block(void)

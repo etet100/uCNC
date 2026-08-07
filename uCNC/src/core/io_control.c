@@ -26,9 +26,6 @@ static uint8_t io_lock_limits_mask;
 static uint8_t io_invert_limits_mask;
 static bool io_limits_disabled;
 
-// @GPILOT
-uint8_t gpilotVirtualInputs;
-
 #if ASSERT_PIN(PROBE)
 static volatile bool io_last_probe;
 static bool io_probe_enabled;
@@ -395,11 +392,8 @@ uint8_t io_get_raw_limits(void)
 	value |= ((IO_CONDITION_LIMIT_C) ? LIMIT_C_IO_MASK : 0);
 #endif
 
-	// @GPILOT
-	// uint8_t inv = g_settings.limits_invert_mask;
-	// uint8_t result = (value ^ (inv & LIMITS_INV_MASK));
-
-	uint8_t result = (gpilotVirtualInputs & 0b111);
+	uint8_t inv = g_settings.limits_invert_mask;
+	uint8_t result = (value ^ (inv & LIMITS_INV_MASK));
 
 #if (LIMITS_NORMAL_OPERATION_MASK != 0)
 	if (!cnc_get_exec_state(EXEC_HOMING))

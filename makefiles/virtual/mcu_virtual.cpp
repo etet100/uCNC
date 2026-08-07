@@ -85,38 +85,6 @@ extern "C"
 		return global_isr_enabled;
 	}
 
-	// On real MCUs ISR routines (stepper, RTC tick) cannot be preempted by
-	// main-loop code that mutates interpolator/planner state. On this virtual
-	// MCU the timer callback runs on a separate Windows timer-pool thread, so
-	// ticksimul() dispatches itp_run()/step ISR concurrently with main-thread
-	// code that touches shared state (itp_clear, planner_clear,
-	// planner_discard_block, probe cleanup). This recursive mutex mirrors the
-	// "interrupts off" semantics across both threads.
-	static CRITICAL_SECTION g_isr_cs;
-	static INIT_ONCE g_isr_cs_once = INIT_ONCE_STATIC_INIT;
-
-	static BOOL CALLBACK virtual_mcu_isr_cs_init(PINIT_ONCE, PVOID, PVOID *)
-	{
-		InitializeCriticalSection(&g_isr_cs);
-		return TRUE;
-	}
-
-	static inline void virtual_mcu_isr_cs_ensure(void)
-	{
-		InitOnceExecuteOnce(&g_isr_cs_once, virtual_mcu_isr_cs_init, NULL, NULL);
-	}
-
-	void virtual_mcu_isr_lock(void)
-	{
-		virtual_mcu_isr_cs_ensure();
-		EnterCriticalSection(&g_isr_cs);
-	}
-
-	void virtual_mcu_isr_unlock(void)
-	{
-		LeaveCriticalSection(&g_isr_cs);
-	}
-
 	void qt_loop()
 	{
 		QCoreApplication::processEvents();
@@ -276,8 +244,16 @@ extern "C"
 	}
 #endif
 
+	void mcu_run_pending_ticks(void);
+
 	void mcu_dotasks()
 	{
+		// Advance the emulated clock and run the step/RTC callbacks here, on the
+		// main loop thread. Every blocking wait in the core pumps cnc_dotasks(),
+		// which lands here, so virtual time keeps flowing during syncs, homing
+		// and probing.
+		mcu_run_pending_ticks();
+
 		qt_loop();
 
 #ifdef MCU_HAS_UART
@@ -512,22 +488,11 @@ extern "C"
 	{
 	}
 
-	// @GPILOT
-	extern uint8_t gpilotVirtualInputs;
+	// Endstops, probe and controls are no longer intercepted here. The
+	// IO_CONDITION_* overrides in cnc_hal_overrides.h route them to the
+	// astrocore_sim module, which keeps invert masks and debounce working.
 	uint8_t mcu_get_input(uint8_t pin)
 	{
-		switch (pin)
-		{
-			case LIMIT_X:
-				return gpilotVirtualInputs & STEP0_IO_MASK;
-			case LIMIT_Y:
-				return gpilotVirtualInputs & STEP1_IO_MASK;
-			case LIMIT_Z:
-				return gpilotVirtualInputs & STEP2_IO_MASK;
-			case PROBE:
-				return gpilotVirtualInputs & STEP7_IO_MASK;
-		}
-
 		uint8_t offset = mcu_get_pin_offset(pin);
 		if (offset > 31)
 		{
@@ -820,6 +785,30 @@ extern "C"
 	 * **/
 	void (*timer_func_handler_pntr)(void);
 
+	// Ticks queued by the timer thread, waiting to be run by the main loop.
+	static volatile int32_t pending_ticks = 0;
+
+	// Upper bound on catch-up ticks per mcu_dotasks() call. Without it a long
+	// main-loop stall would be followed by a burst that stalls it even more.
+	#ifndef EMULATION_MAX_CATCHUP_TICKS
+	#define EMULATION_MAX_CATCHUP_TICKS 4
+	#endif
+
+	// Queue depth. Once the main loop is this far behind, extra ticks are
+	// dropped instead of piling up: the machine simply runs slower than the
+	// wall clock, which beats an ever growing backlog.
+	#ifndef EMULATION_MAX_PENDING_TICKS
+	#define EMULATION_MAX_PENDING_TICKS 32
+	#endif
+
+	static void queue_tick(void)
+	{
+		if (__atomic_load_n(&pending_ticks, __ATOMIC_RELAXED) < EMULATION_MAX_PENDING_TICKS)
+		{
+			__atomic_fetch_add(&pending_ticks, 1, __ATOMIC_RELAXED);
+		}
+	}
+
 	#ifdef WINDOWS
 		HANDLE win_timer;
 		unsigned long perf_start;
@@ -833,9 +822,11 @@ extern "C"
 	#endif
 
 #ifndef WINDOWS
+	// See the Windows callback below: the tick only gets queued here, the main
+	// loop runs it.
 	void linux_handler(union sigval sv)
 	{
-		timer_func_handler_pntr();
+		queue_tick();
 	}
 
 	timer_t timer;
@@ -874,9 +865,12 @@ extern "C"
 #endif
 
 #ifdef WINDOWS
+	// Runs on the Windows timer-pool thread and only paces the simulation.
+	// The tick itself must not run here: it drives the step and RTC callbacks,
+	// which share interpolator and planner state with the main loop.
 	VOID CALLBACK timer_sig_handler(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 	{
-		timer_func_handler_pntr();
+		queue_tick();
 	}
 
 	int start_timer(int mSec, void (*timer_func_handler)(void))
@@ -892,6 +886,25 @@ extern "C"
 		return (0);
 	}
 #endif
+
+	// Called from mcu_dotasks() on the main loop thread.
+	void mcu_run_pending_ticks(void)
+	{
+		if (!timer_func_handler_pntr)
+		{
+			return;
+		}
+
+		for (int i = 0; i < EMULATION_MAX_CATCHUP_TICKS; i++)
+		{
+			if (__atomic_load_n(&pending_ticks, __ATOMIC_RELAXED) <= 0)
+			{
+				break;
+			}
+			__atomic_fetch_sub(&pending_ticks, 1, __ATOMIC_RELAXED);
+			timer_func_handler_pntr();
+		}
+	}
 
 	void stop_timer(void)
 	{
@@ -1000,6 +1013,9 @@ extern "C"
 		oneshot_alarm = mcu_micros() + oneshot_timeout;
 	}
 
+	// Runs on the main loop thread only, driven by mcu_run_pending_ticks().
+	// The guard still matters: the step and RTC callbacks can reach code that
+	// pumps cnc_dotasks() again, and a nested tick would corrupt the counters.
 	void ticksimul(void)
 	{
 		static bool running = false;
@@ -1008,11 +1024,6 @@ extern "C"
 		{
 			return;
 		}
-
-		// Serialize with any main-thread code that mutates interpolator/planner
-		// state. Held for the whole tick window so stepper ISR, oneshot and RTC
-		// callbacks all observe a consistent view.
-		virtual_mcu_isr_lock();
 
 		static uint32_t prev_special, prev, next_rtc = 1000;
 		float parcial = 0;
@@ -1072,8 +1083,6 @@ extern "C"
 				next_rtc += 1000;
 			}
 		}
-
-		virtual_mcu_isr_unlock();
 
 		//		startCycleCounter();
 		__atomic_store_n(&running, false, __ATOMIC_RELAXED);

@@ -34,6 +34,11 @@ class WindowsSerial
         DWORD errors;
         QLocalSocket *socket = nullptr;
         QLocalSocket *controlSocket = nullptr;
+        //Partial line left over from the last control socket read
+        QString ctrlBuffer;
+
+        //Reads and executes any pending control command
+        void processControlCommands();
 
     public:
         //Initialize Serial communication with the given COM port

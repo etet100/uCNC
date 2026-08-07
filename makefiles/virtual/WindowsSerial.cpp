@@ -5,13 +5,7 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-extern "C" {
-    void gpilotLockProbeAtCurrentPosition(void);
-    void gpilotResetProbePosition(void);
-    void gpilotSetHome(bool abs, double x, double y, double z);
-    void gpilotSetSingleLimit(int axis, double pos);
-    void gpilotEstop();
-}
+#include "../../uCNC/src/modules/astrocore_sim.h"
 
 WindowsSerial::WindowsSerial(const char *portName)
 {
@@ -39,68 +33,74 @@ WindowsSerial::~WindowsSerial()
     }
 }
 
+void WindowsSerial::processControlCommands()
+{
+    if (controlSocket == nullptr || !controlSocket->bytesAvailable()) {
+        return;
+    }
+
+    ctrlBuffer += controlSocket->readAll();
+
+    int pos;
+    while ((pos = ctrlBuffer.indexOf("\n")) != -1) {
+        QString line = ctrlBuffer.left(pos).trimmed();
+        ctrlBuffer = ctrlBuffer.mid(pos + 1);
+
+        qDebug() << "[uCNC] Received:" << line;
+
+        QJsonDocument doc = QJsonDocument::fromJson(line.toUtf8());
+        if (doc.isNull() || !doc.isObject()) {
+            continue;
+        }
+
+        QJsonObject obj = doc.object();
+        QString cmd = obj["cmd"].toString();
+
+        if (cmd == "probe_at_current") {
+            astrocore_sim_probe_at_current();
+        } else if (cmd == "reset_probe") {
+            astrocore_sim_reset_probe();
+        } else if (cmd == "set_home") {
+            astrocore_sim_set_home(
+                obj["abs"].toBool(),
+                (float)obj["x"].toDouble(),
+                (float)obj["y"].toDouble(),
+                (float)obj["z"].toDouble()
+            );
+        } else if (cmd == "set_single_limit") {
+            //{"axis":2,"cmd":"set_single_limit","pos":25}
+            astrocore_sim_set_single_limit(
+                obj["axis"].toInt(),
+                (float)obj["pos"].toDouble()
+            );
+        } else if (cmd == "estop") {
+            //"pressed" is optional so that the old fire-and-forget form still works
+            astrocore_sim_estop(obj.contains("pressed") ? obj["pressed"].toBool() : true);
+        } else if (cmd == "set_input") {
+            //{"cmd":"set_input","mask":2048,"active":true}
+            astrocore_sim_set_input(
+                (uint16_t)obj["mask"].toInt(),
+                obj["active"].toBool()
+            );
+        }
+    }
+}
+
 int WindowsSerial::ReadData(char *buffer, unsigned int nbChar)
 {
-    //Number of bytes we'll really ask to read
-    unsigned int toRead;
+    //Always drain the control channel. Checking it only when the data socket is
+    //idle used to starve it while g-code was streaming, which delayed estop.
+    processControlCommands();
 
     if (socket->bytesAvailable()) {
         //If there is we check if there is enough data to read the required number
         //of characters, if not we'll read only the available characters to prevent
         //locking of the application.
-        toRead = MIN(nbChar, socket->bytesAvailable());
+        unsigned int toRead = MIN(nbChar, socket->bytesAvailable());
 
-        qint64 bytesRead = socket->read(buffer, toRead);
-
-        // //Handle "virtual settings" command (@@@,x,y,z,probe,estop)
-        // if (bytesRead > 5 && buffer[0] == '@' && buffer[1] == '@' && buffer[2] == '@') {
-        //     strpos(buffer, bytesRead, ",");
-
-        //     qDebug() << "Received: " << buffer;
-        // }
+        socket->read(buffer, toRead);
 
         return toRead;
-    }
-
-    static QString ctrlBuffer = "";
-    if (controlSocket->bytesAvailable()) {
-        ctrlBuffer += controlSocket->readAll();
-
-        int pos;
-        while ((pos = ctrlBuffer.indexOf("\n")) != -1) {
-            QString line = ctrlBuffer.left(pos).trimmed();
-            ctrlBuffer = ctrlBuffer.mid(pos + 1);
-
-            qDebug() << "[uCNC] Received:" << line;
-
-            // Process control commands here
-            QJsonDocument doc = QJsonDocument::fromJson(line.toUtf8());
-            if (!doc.isNull() && doc.isObject()) {
-                QJsonObject obj = doc.object();
-                QString cmd = obj["cmd"].toString();
-
-                if (cmd == "probe_at_current") {
-                    gpilotLockProbeAtCurrentPosition();
-                } else if (cmd == "reset_probe") {
-                    gpilotResetProbePosition();
-                } else if (cmd == "set_home") {
-                    gpilotSetHome(
-                        obj["abs"].toBool(),
-                        obj["x"].toDouble(),
-                        obj["y"].toDouble(),
-                        obj["z"].toDouble()
-                    );
-                } else if (cmd == "set_single_limit") {
-                    //{\"axis\":2,\"cmd\":\"set_single_limit\",\"pos\":25}"
-                    gpilotSetSingleLimit(
-                        obj["axis"].toInt(),
-                        obj["pos"].toDouble()
-                    );
-                } else if (cmd == "estop") {
-                    gpilotEstop();
-                }
-            }
-        }
     }
 
     //If nothing has been read, or that an error was detected return 0

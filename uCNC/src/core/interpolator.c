@@ -859,12 +859,9 @@ void itp_stop_tools(void)
 
 void itp_clear(void)
 {
-	VIRTUAL_MCU_ISR_CRITICAL
-	{
-		itp_cur_plan_block = NULL;
-		itp_blk_clear();
-		itp_sgm_clear();
-	}
+	itp_cur_plan_block = NULL;
+	itp_blk_clear();
+	itp_sgm_clear();
 }
 
 void itp_get_rt_position(int32_t *position)

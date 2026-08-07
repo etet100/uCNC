@@ -1082,18 +1082,11 @@ uint8_t mc_probe(float *target, uint8_t flags, motion_data_t *block_data)
 		;
 	// disables the probe
 	io_disable_probe();
-	// Hold the virtual-MCU ISR lock across the whole interpolator/planner
-	// teardown so the Windows timer-pool thread cannot observe a half-cleared
-	// state (e.g. itp_cur_plan_block == NULL while the planner still has the
-	// probe block). Expands to a plain block on real MCUs.
-	VIRTUAL_MCU_ISR_CRITICAL
+	itp_clear();
+	// clears the buffer but conserves the tool data
+	while (!planner_buffer_is_empty())
 	{
-		itp_clear();
-		// clears the buffer but conserves the tool data
-		while (!planner_buffer_is_empty())
-		{
-			planner_discard_block();
-		}
+		planner_discard_block();
 	}
 	// clears hold
 	cnc_clear_exec_state(EXEC_HOLD);

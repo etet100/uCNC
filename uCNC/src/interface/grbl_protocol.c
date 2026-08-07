@@ -15,9 +15,6 @@
 
 #include "../cnc.h"
 
-void qt_debug(int a);
-void qt_debug_f(float a);
-
 #if defined(ENABLE_PIN_DEBUG_EXTRA_CMD) && defined(ENABLE_PIN_TRANSLATIONS)
 const char pin_name_1[] __rom__ = "STEP0";
 const char pin_name_2[] __rom__ = "STEP1";
@@ -387,14 +384,6 @@ static FORCEINLINE void proto_status_tail(void)
 		return;
 	}
 	g_planner_state.ovr_counter--;
-}
-
-// @GPILOT
-void protocol_get_rt_pos(float *axis)
-{
-    int32_t steppos[AXIS_TO_STEPPERS];
-    itp_get_rt_position(steppos);
-    kinematics_steps_to_coordinates(steppos, axis);
 }
 
 void proto_status(void)

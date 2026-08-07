@@ -141,13 +141,6 @@ extern "C"
 #define ATOMIC_SPIN() mcu_nop()
 #endif
 
-// No-op fallback; the virtual Windows MCU defines this in mcumap_virtual.h
-// as a real recursive mutex to serialize the timer-pool thread with the
-// main loop. On real MCUs "interrupts off" already provides this guarantee.
-#ifndef VIRTUAL_MCU_ISR_CRITICAL
-#define VIRTUAL_MCU_ISR_CRITICAL
-#endif
-
 #ifndef TASK_YIELD
 #ifndef mcu_in_isr_context
 	extern bool mcu_in_isr_context(void);
@@ -185,7 +178,7 @@ extern "C"
 		uint32_t now = mcu_free_micros();
 		for (;;)
 		{
-			uint8_t expected = BIN_SEMPH_UNLOCKED;
+			ATOMIC_TYPE expected = BIN_SEMPH_UNLOCKED;
 			if (ATOMIC_COMPARE_EXCHANGE_N(lock, &expected, BIN_SEMPH_LOCKED, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE))
 			{
 				return true;

@@ -46,6 +46,14 @@ extern "C"
 #define DISABLE_MULTISTREAM_SERIAL
 
 	/**
+	 * AstroCore simulator support.
+	 * Routes endstops, probe and controls to the astrocore_sim module and
+	 * publishes a machine state snapshot for the host.
+	 * See src/modules/astrocore_sim.h and cnc_hal_overrides.h.
+	 * */
+#define ENABLE_ASTROCORE_SIM
+
+	/**
 	 * Choose the board
 	 * Select the boardmap for your board.
 	 * Boardmaps are available at src/hal/boards/
@@ -396,7 +404,7 @@ extern "C"
 	/**
 	 * Uncomment to enable module extensions
 	 * */
-	// #define ENABLE_MAIN_LOOP_MODULES
+#define ENABLE_MAIN_LOOP_MODULES
 	// #define ENABLE_IO_MODULES
 	// #define ENABLE_PARSER_MODULES
 	// #define ENABLE_MOTION_CONTROL_MODULES

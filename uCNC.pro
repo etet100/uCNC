@@ -72,6 +72,7 @@ HEADERS += \
     uCNC/src/interface/grbl_stream.h \
     uCNC/src/interface/serial_compatibility.h \
     uCNC/src/module.h \
+    uCNC/src/modules/astrocore_sim.h \
     uCNC/src/modules/digimstep.h \
     uCNC/src/modules/digipot.h \
     uCNC/src/modules/encoder.h \
@@ -124,6 +125,7 @@ SOURCES += \
     uCNC/src/interface/grbl_settings.c \
     uCNC/src/interface/grbl_stream.c \
     uCNC/src/module.c \
+    uCNC/src/modules/astrocore_sim.c \
     uCNC/src/modules/digimstep.c \
     uCNC/src/modules/digipot.c \
     uCNC/src/modules/encoder.c \
