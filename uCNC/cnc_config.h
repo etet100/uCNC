@@ -501,6 +501,11 @@ extern "C"
 	 *  (defined in the specified kinematics_xxx.h file)
 	 * */
 
+/**
+ * Safety door configurations (in development)
+ */
+// #define ENABLE_SAFETY_DOOR_PARKING
+
 // #define ENABLE_SKEW_COMPENSATION
 #ifdef ENABLE_SKEW_COMPENSATION
 // uncomment to correct only in the xy axis
@@ -663,6 +668,16 @@ extern "C"
 	 * */
 
 #define EMULATE_GRBL_STARTUP 3
+
+	/**
+	 * Enable advanced Grbl states.
+	 * This enables a couple more states in the status messages besides Alarm, Door, Hold, Check, Home, Jog, Run and Idle. These are:
+	 * Locked - when the controller in in lock state (requires $X or $H to unlock)
+	 * Dwell - when a dwell is being executed
+	 * Probe - used in probing motions and HMapping
+	 */
+
+	// #define ENABLE_EXTRA_GRBL_STATES
 
 	/**
 	 *

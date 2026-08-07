@@ -343,6 +343,13 @@ void EXTI15_10_IRQHandler(void)
 #endif
 #endif
 
+void PendSV_Handler(void)
+{
+	uint32_t millis = mcu_runtime_ms;
+	mcu_rtc_cb(millis);
+	NVIC_ClearPendingIRQ(PendSV_IRQn);
+}
+
 #if !defined(ARDUINO_ARCH_STM32) || defined(CUSTOM_PRE_MAIN)
 void SysTick_IRQHandler(void)
 #else
@@ -397,10 +404,8 @@ void osSystickHandler(void)
 	ms_servo_counter = (servo_counter != 20) ? servo_counter : 0;
 
 #endif
-	uint32_t millis = mcu_runtime_ms;
-	millis++;
-	mcu_runtime_ms = millis;
-	mcu_rtc_cb(millis);
+	mcu_runtime_ms++;
+	SCB->ICSR = SCB_ICSR_PENDSVSET_Msk; // signal low priority task
 }
 
 /**
@@ -783,7 +788,7 @@ void mcu_freq_to_clocks(float frequency, uint16_t *ticks, uint16_t *prescaller)
 	frequency = CLAMP((float)F_STEP_MIN, frequency, (float)F_STEP_MAX);
 
 	// up and down counter (generates half the step rate at each event)
-	uint32_t totalticks = (uint32_t)((float)(TIMER_CLOCK >> 1) / frequency);
+	uint32_t totalticks = (uint32_t)((float)(TIMER_CLOCK) / frequency);
 	*prescaller = 1;
 	while (totalticks > 0xFFFF)
 	{
@@ -797,7 +802,7 @@ void mcu_freq_to_clocks(float frequency, uint16_t *ticks, uint16_t *prescaller)
 
 float mcu_clocks_to_freq(uint16_t ticks, uint16_t prescaller)
 {
-	return ((float)TIMER_CLOCK / (float)(((uint32_t)ticks) << (prescaller + 1)));
+	return ((float)TIMER_CLOCK / (float)(((uint32_t)ticks) << (prescaller)));
 }
 
 // starts a constant rate pulse at a given frequency.
@@ -854,7 +859,8 @@ void mcu_rtc_init()
 	SysTick->LOAD = ((F_CPU / 1000) - 1);
 	SysTick->VAL = 0;
 	NVIC_SetPriority(SysTick_IRQn, NVIC_RTC_IRQ_Pri);
-	SysTick->CTRL = 7; // Start SysTick (ABH clock)
+	SysTick->CTRL = 7;					 // Start SysTick (ABH clock)
+	NVIC_SetPriority(PendSV_IRQn, 0xFF); // background task
 }
 
 void mcu_dotasks()

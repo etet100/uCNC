@@ -8,7 +8,7 @@
 
 # Building µCNC
 
-To configure µCNC to fit your hardware you can use [µCNC config builder web tool](https://paciente8159.github.io/uCNC-config-builder/) to generate the config override files.
+To configure µCNC to fit your hardware you can use [µCNC config builder web tool](https://paciente8159.github.io/uCNC-webconfig/) to generate the config override files.
 Although most of the options are configurable via the web tool, some options might be missing and you might need to add them manually (regarding tools or addon modules mostly).
 
 # Useful Links
@@ -25,14 +25,13 @@ _**Jump to section**_
 * [µCNC default pinouts](https://github.com/Paciente8159/uCNC/blob/master/PINOUTS.md)
 
 
-# VERSION 1.15+ NOTES
+# VERSION 1.16+ NOTES
 
-Version 1.15 introduces the following changes:
-  - added new embroidery tool mode and new embroidery tool based on a stepper motor to control the needle. This tool mode is able to run the needle motor and the axis with different speed profiles to target specific motion needs of this type of tool.
-  - added new encoder module enhancements with support for I2C and SSI encoders 
-  - new hooks/callbacks to allow the creation and usage of custom ATC (automatic tool change) modules
-  - added new planner event to allow last minute modifications to motions blocks being sent to the step generator
-
+Version 1.16 introduces the following changes:
+  - several AVR core improvements, now with better ISR pseudo priority preemption
+  - general ARM ISR priority revisions
+  - Grbl message pattern improvements to allow better compatibility with senders
+  - improvements to the encoder module
 
 # IMPORTANT NOTE
 
@@ -76,7 +75,9 @@ You can also reach me at µCNC discord channel
 
 ## Current µCNC status
 
-µCNC current major version is v1.15. You can check all the new features, changes and bug fixes in the [CHANGELOG](https://github.com/Paciente8159/uCNC/blob/master/CHANGELOG.md).
+µCNC current major version is v1.16. You can check all the new features, changes and bug fixes in the [CHANGELOG](https://github.com/Paciente8159/uCNC/blob/master/CHANGELOG.md).
+
+Version 1.16 improved AVR, ARM for more stability and performance. Encoder module was also improved and enhanced. This allowed huge improvements to G33 parser module. A special thanks to [@HuubBuis](https://github.com/HuubBuis) for all the help and testing.
 
 Version 1.15 added the following new major features.
   - added new embroidery tool mode and new embroidery tool based on a stepper motor to control the needle. This tool mode is able to run the needle motor and the axis with different speed profiles to target specific motion needs of this type of tool.

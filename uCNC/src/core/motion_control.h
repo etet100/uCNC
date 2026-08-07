@@ -44,7 +44,7 @@ extern "C"
 		uint8_t reg;
 		struct
 		{
-			uint8_t feed_override : 1;
+			uint8_t ovr_bypass : 1;
 			uint8_t optimal : 1;
 			uint8_t synched : 1;
 #if TOOL_COUNT > 0
@@ -93,6 +93,7 @@ extern "C"
 #endif
 
 	void mc_init(void);
+	void mc_clear(bool preserve_tool);
 	bool mc_get_checkmode(void);
 	bool mc_toogle_checkmode(void);
 

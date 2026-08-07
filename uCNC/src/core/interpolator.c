@@ -84,16 +84,20 @@ void itp_update_feed(float step_frequency)
 	p->feed_sqr = step_frequency * step_frequency;
 	itp_needs_update = true;
 
-	for (uint8_t i = 0; i < INTERPOLATOR_BUFFER_SIZE; i++)
-	{
-		uint16_t ticks, presc;
-		float upfeed = step_frequency * (1 << (itp_sgm_data[i].dss_level));
-		mcu_freq_to_clocks(upfeed, &ticks, &presc);
-		itp_sgm_data[i].timer_counter = ticks;
-		itp_sgm_data[i].timer_prescaller = presc;
-		// mark for update
-		itp_sgm_data[i].flags |= ITP_UPDATE_ISR;
-	}
+	/**
+	 * DO NOT UPDATE STEPS ALREADY ON THE OUTPUT BUFFER
+	 */
+
+	// for (uint8_t i = 0; i < INTERPOLATOR_BUFFER_SIZE; i++)
+	// {
+	// 	uint16_t ticks, presc;
+	// 	float upfeed = step_frequency * (1 << (itp_sgm_data[i].dss_level));
+	// 	mcu_freq_to_clocks(upfeed, &ticks, &presc);
+	// 	itp_sgm_data[i].timer_counter = ticks;
+	// 	itp_sgm_data[i].timer_prescaller = presc;
+	// 	// mark for update
+	// 	itp_sgm_data[i].flags |= ITP_UPDATE_ISR;
+	// }
 }
 
 bool itp_sync_ready(void)
@@ -462,11 +466,12 @@ void itp_run(void)
 		float current_speed = fast_flt_sqrt(itp_cur_plan_block->entry_feed_sqr);
 
 		// if an hold is active forces to deaccelerate
-		if (cnc_get_exec_state(EXEC_HOLD))
+		if (cnc_get_exec_state(EXEC_STOPPING))
 		{
 			// forces deacceleration by overriding the profile juntion points
 			accel_until = remaining_steps;
 			deaccel_from = remaining_steps;
+			t_deac_integrator = INTERPOLATOR_DELTA_T;
 			itp_needs_update = true;
 		}
 		else if (itp_needs_update) // forces recalculation of acceleration and deacceleration profiles
@@ -579,14 +584,15 @@ void itp_run(void)
 			acum += acc_step;
 			acc_step_acum = MIN(acum, 0.999f);
 			float new_speed = acc_scale * s_curve_function(acum) + acc_init_speed;
-			new_speed = (t_acc_integrator >= 0) ? (new_speed + acc_init_speed) : (acc_init_speed - new_speed);
+			new_speed = (integrator >= 0) ? (new_speed + acc_init_speed) : (acc_init_speed - new_speed);
 			speed_change = new_speed - current_speed;
 #else
 			speed_change = integrator * itp_cur_plan_block->acceleration;
 #endif
 
 			profile_steps_limit = accel_until;
-			sgm->flags = ITP_UPDATE_ISR | ITP_ACCEL;
+			sgm->flags = (ITP_UPDATE_ISR | ((integrator >= 0) ? ITP_ACCEL : ITP_DEACCEL));
+			integrator = ABS(integrator); // ensure the integrator is a positive time slice
 		}
 		else if (remaining_steps > deaccel_from)
 		{
@@ -629,14 +635,14 @@ void itp_run(void)
 		{
 			partial_distance += current_speed * integrator;
 			// computes how many steps it will perform at this speed and frame window
-			segm_steps = (uint16_t)MAX(0,roundf(partial_distance));
+			segm_steps = (uint16_t)MAX(0, roundf(partial_distance));
 		}
 		else
 		{
 			// speed can't be negative
 			itp_cur_plan_block->entry_feed_sqr = 0;
 
-			if (cnc_get_exec_state(EXEC_HOLD))
+			if (cnc_get_exec_state(EXEC_STOPPING))
 			{
 				return;
 			}
@@ -751,7 +757,7 @@ void itp_run(void)
 #endif
 		remaining_steps -= segm_steps;
 
-		if (remaining_steps == accel_until && !cnc_get_exec_state(EXEC_HOLD)) // resets float additions error
+		if (remaining_steps == accel_until && !cnc_get_exec_state(EXEC_STOPPING)) // resets float additions error
 		{
 			itp_cur_plan_block->entry_feed_sqr = fast_flt_pow2(junction_speed);
 		}
@@ -832,7 +838,7 @@ MCU_CALLBACK void itp_stop(void)
 	// safer to make the stoping condition block
 	ATOMIC_CODEBLOCK
 	{
-		uint8_t state = cnc_get_exec_state(EXEC_ALLACTIVE);
+		uint16_t state = cnc_get_exec_state(EXEC_ALLACTIVE);
 
 		// any stop command while running triggers an HALT alarm
 		if (state & EXEC_RUN)
@@ -1327,7 +1333,7 @@ MCU_CALLBACK void mcu_step_cb(void)
 void itp_start(bool is_synched)
 {
 	// starts the step isr if is stopped and there are segments to execute
-	if (!cnc_get_exec_state(EXEC_RUN | EXEC_HOLD | EXEC_ALARM) && !itp_sgm_is_empty()) // exec state is not hold or alarm and not already running
+	if (!cnc_get_exec_state(EXEC_RUN | EXEC_STOPPING | EXEC_ALARM) && !itp_sgm_is_empty()) // exec state is not hold or alarm and not already running
 	{
 		// check if the start is controlled by synched motion before start
 		if (!is_synched)
